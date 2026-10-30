@@ -178,9 +178,13 @@ export function ledRibbonTexture(text, color = '#5cff9d') {
   ctx.fillStyle = color;
   ctx.shadowColor = color;
   ctx.shadowBlur = 10;
-  const unit = `${text}   `;
-  const w = ctx.measureText(unit).width;
-  const reps = Math.max(1, Math.round(1024 / w));
+  let unit = `${text}   `;
+  let w = ctx.measureText(unit).width;
+  if (w > 980) {
+    ctx.font = `800 ${Math.floor((38 * 980) / w)}px system-ui, sans-serif`;
+    w = ctx.measureText(unit).width;
+  }
+  const reps = Math.max(1, Math.floor(1024 / w));
   const sw = 1024 / reps;
   ctx.textAlign = 'center';
   for (let i = 0; i < reps; i++) ctx.fillText(text, sw * (i + 0.5), 34);

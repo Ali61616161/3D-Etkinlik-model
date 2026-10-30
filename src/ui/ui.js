@@ -1,3 +1,5 @@
+import { blockLabel } from '../engine/layout.js';
+
 const esc = (v) =>
   String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const safeColor = (c) => (/^#[0-9a-fA-F]{3,8}$/.test(c) ? c : '#4cc2ff');
@@ -6,7 +8,8 @@ const safeColor = (c) => (/^#[0-9a-fA-F]{3,8}$/.test(c) ? c : '#4cc2ff');
 export function createUI({ config, model, handlers }) {
   const $ = (id) => document.getElementById(id);
   const el = {
-    seg: $('cfgSeg'),
+    cfgSelect: $('cfgSelect'),
+    evtNote: $('evtNote'),
     selBlock: $('selBlock'),
     selRow: $('selRow'),
     selSeat: $('selSeat'),
@@ -37,11 +40,9 @@ export function createUI({ config, model, handlers }) {
   };
   const opt = (value, text, extra = {}) => Object.assign(new Option(text, value), extra);
 
-  // ── konfigürasyon seçici ──
-  el.seg.querySelectorAll('button').forEach((b) => {
-    b.textContent = config.configurations[b.dataset.cfg].label;
-    b.addEventListener('click', () => handlers.onConfig(b.dataset.cfg));
-  });
+  // ── etkinlik düzeni seçici ──
+  for (const [key, c] of Object.entries(config.configurations)) el.cfgSelect.append(opt(key, c.label));
+  el.cfgSelect.addEventListener('change', () => handlers.onConfig(el.cfgSelect.value));
 
   el.selBlock.addEventListener('change', () => !silent && el.selBlock.value && handlers.onBlock(el.selBlock.value));
   el.selRow.addEventListener('change', () => !silent && handlers.onRow(Number(el.selRow.value)));
@@ -103,7 +104,8 @@ export function createUI({ config, model, handlers }) {
     },
 
     setConfig(key, blocks) {
-      el.seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.cfg === key)));
+      el.cfgSelect.value = key;
+      el.evtNote.textContent = config.configurations[key].note ?? '';
       quiet(() => {
         el.selBlock.replaceChildren(opt('', 'Blok seçin…'));
         const groups = new Map();
@@ -166,7 +168,7 @@ export function createUI({ config, model, handlers }) {
     showSeat(seat, stats, block) {
       if (!seat) { el.infoCard.hidden = true; return; }
       el.infoCard.hidden = false;
-      const blockName = block.id.startsWith('L') ? `Loca ${block.locaNo}` : block.id.startsWith('VIP') ? block.name : `Blok ${block.id}`;
+      const blockName = blockLabel(block);
       el.infoTitle.textContent = `${blockName} · Sıra ${seat.rowLabel} · Koltuk ${seat.seatNo}`;
       el.infoDot.style.background = safeColor(config.categories[seat.category]?.color);
       el.infoCat.textContent = catLabel(seat.category);
@@ -184,7 +186,7 @@ export function createUI({ config, model, handlers }) {
       el.hud.hidden = !visible;
       document.body.classList.toggle('seat-mode', visible);
       if (!visible || !seat) return;
-      const blockName = block.id.startsWith('L') ? `Loca ${block.locaNo}` : block.id.startsWith('VIP') ? block.name : `Blok ${block.id}`;
+      const blockName = blockLabel(block);
       el.hudTitle.textContent = `${blockName} · Sıra ${seat.rowLabel} · Koltuk ${seat.seatNo}`;
       el.hudSub.textContent = catLabel(seat.category);
       $('hudReset').textContent = `⟲ ${focusDative} bak`;

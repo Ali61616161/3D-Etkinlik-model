@@ -87,16 +87,16 @@ export function buildShell(ctx) {
 
   const fw = floor.halfWidth * 2, fl = floor.zMax - floor.zMin;
   const floorGeo = new THREE.PlaneGeometry(fw, fl).rotateX(-Math.PI / 2);
-  const mkFloor = (mat, key) => {
-    const m = new THREE.Mesh(floorGeo, mat);
+  // zemin: aynı malzemeyi kullanan etkinlik düzenleri tek düzlemi paylaşır (basketbol siyah, konser cilalı beton, gala halı…)
+  const byMat = {};
+  for (const [id, c] of Object.entries(config.configurations)) (byMat[c.floorMat] ??= []).push(id);
+  for (const [matKey, ids] of Object.entries(byMat)) {
+    const m = new THREE.Mesh(floorGeo, mats[matKey]);
     m.position.set(0, 0.004, (floor.zMax + floor.zMin) / 2);
     m.receiveShadow = true;
     worldUVMesh(m, 0.25);
-    groups[key].add(m);
-    return m;
-  };
-  mkFloor(mats.floorConcert, 'concert');
-  mkFloor(mats.floorGame, 'basketball');
+    ctx.groupFor(ids).add(m);
+  }
 
   // ── Çelik kemer çatı ────────────────────────────────────────────────────────
   const { R, cy, thetaMax } = archParams(roof);
@@ -180,22 +180,29 @@ export function buildShell(ctx) {
 
   // LED şeritleri
   const ribbonMat = new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color(1.5, 1.5, 1.5) });
-  const ribbonTex = {
-    basketball: ledRibbonTexture('BASKET !!!', '#5cff9d'),
-    concert: ledRibbonTexture('LIVE  ★  KONSER', '#5cc8ff'),
+  // LED şerit yazısı etkinliğe göre değişir
+  const ribbonSpec = {
+    basketball: ['BASKET !!!', '#5cff9d'],
+    symphony: ['SENFONİ  ★  FİLM KONSERİ', '#ffcf7a'],
+    gala: ['GALA  ★  ÖDÜL  ★  MODA', '#ff7ad9'],
+    esports: ['E-SPOR  ★  FINALS', '#ff5470'],
+    standing: ['LIVE  ★  KONSER', '#5cc8ff'],
+    concert: ['LIVE  ★  KONSER', '#5cc8ff'],
   };
-  ribbonMat.map = ribbonTex.basketball;
+  const ribbonTex = {};
+  const ribbonFor = (key) => (ribbonTex[key] ??= ledRibbonTexture(...(ribbonSpec[key] ?? ribbonSpec.concert)));
+  ribbonMat.map = ribbonFor(ctx.allConfigs[0]);
   for (const r of ribbons) {
     const m = new THREE.Mesh(r.geo, ribbonMat);
     m.position.set(...r.pos);
     m.rotation.y = r.ry;
     groups.structure.add(m);
   }
+  const houseLevel = { basketball: 2.2, symphony: 0.55, gala: 0.25, esports: 0.12, concert: 0.1, standing: 0.1 };
   hooks.onConfig.push((key) => {
-    ribbonMat.map = ribbonTex[key];
+    ribbonMat.map = ribbonFor(key);
     ribbonMat.needsUpdate = true;
-    // armatür parlaklığı: maçta tam, konserde loş
-    const lv = key === 'basketball' ? 2.2 : 0.1;
+    const lv = houseLevel[key] ?? 0.1;
     mats.lampCool.color.setRGB(0.91 * lv, 0.945 * lv, lv);
   });
   anim.push((t) => {

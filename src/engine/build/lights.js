@@ -47,9 +47,14 @@ export function buildLights(ctx) {
   wash[2].position.set(0, 12, 0);
   scene.add(...wash);
 
+  let cycleWash = true;
   const presets = {
     game: { hemi: 0.9, sun: 1.0, game: 1500, wash: 0, bg: 0x0a0b0e, fog: [0x0c0d11, 0.0032] },
-    concert: { hemi: 0.42, sun: 0.22, game: 0, wash: 480, bg: 0x050608, fog: [0x0d0818, 0.0105] },
+    concert: { hemi: 0.42, sun: 0.22, game: 0, wash: 480, bg: 0x050608, fog: [0x0d0818, 0.0105], cycle: true },
+    // Senfoni: sıcak, yumuşak; gala: koyu salon + macenta/mavi yıkama; e-spor: kırmızı/camgöbeği takım renkleri
+    classical: { hemi: 0.62, sun: 0.32, game: 0, wash: 300, bg: 0x09070a, fog: [0x110e0c, 0.0072], colors: [0xfff0e0, 0xffe8d0, 0xfff4ea] },
+    gala: { hemi: 0.34, sun: 0.16, game: 0, wash: 560, bg: 0x050508, fog: [0x0b0714, 0.0095], colors: [0xff3d9a, 0x3d7bff, 0xb04cff] },
+    esports: { hemi: 0.36, sun: 0.18, game: 0, wash: 620, bg: 0x040508, fog: [0x070a14, 0.0105], colors: [0xff3040, 0x20d8ff, 0xff3040] },
   };
 
   hooks.onConfig.push((key, config) => {
@@ -60,10 +65,12 @@ export function buildLights(ctx) {
     wash.forEach((l) => (l.intensity = p.wash));
     scene.background = new THREE.Color(p.bg);
     scene.fog = new THREE.FogExp2(p.fog[0], p.fog[1]);
+    cycleWash = !!p.cycle;
+    if (p.colors) wash.forEach((l, i) => l.color.setHex(p.colors[i % p.colors.length]));
   });
 
   anim.push((t) => {
-    if (state.config !== 'concert') return;
+    if (!cycleWash) return;
     wash.forEach((l, i) => l.color.setHSL(((t * 0.06 + i / 3) % 1 + 1) % 1, 0.6, 0.6));
   });
 }

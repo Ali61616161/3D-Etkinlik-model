@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import config from '../src/venue/volkswagen-arena.config.js';
-import { buildSeatModel, seatsForConfig, ringLayout } from '../src/engine/layout.js';
+import { buildSeatModel, seatsForConfig, ringLayout, makeGroundHeight, makeCameraBounds, blockLabel } from '../src/engine/layout.js';
 import { SeatPicker } from '../src/engine/picker.js';
 
 const model = buildSeatModel(config);
@@ -13,12 +13,12 @@ test('config: tribün/blok tanımları tutarlı', () => {
   const ids = new Set();
   for (const t of config.tribunes) {
     assert.ok(t.configs.length && t.configs.every((c) => configs.includes(c)), `${t.id}: bilinmeyen düzen`);
-    assert.ok(['flat', 'rake', 'fan'].includes(t.kind), `${t.id}: kind`);
+    assert.ok(['flat', 'rake', 'fan', 'tables'].includes(t.kind), `${t.id}: kind`);
     if (t.facing) assert.ok(Math.hypot(...t.facing) > 0, `${t.id}: facing sıfır`);
-    for (const b of t.blocks) {
+    for (const b of t.blocks ?? t.tables) {
       assert.ok(!ids.has(b.id), `yinelenen blok ${b.id}`);
       ids.add(b.id);
-      assert.ok(config.categories[b.category], `${b.id}: kategori yok (${b.category})`);
+      assert.ok(config.categories[b.category ?? t.category], `${b.id}: kategori yok`);
     }
   }
 });
@@ -132,4 +132,64 @@ test('seçici: koltuk merkezine bakan ışın o koltuğu bulur', () => {
       assert.ok(Math.hypot(hit.pos[0] - s.pos[0], hit.pos[2] - s.pos[2]) < 0.35, `${s.id}: yanlış koltuk ${hit.id}`);
     }
   }
+});
+
+test('etkinlik düzenleri: her düzenin sahnesi/sahası, odağı ve kamerası tanımlı', () => {
+  for (const [id, c] of Object.entries(config.configurations)) {
+    assert.ok(c.label && c.kind && c.lighting && c.floorMat, `${id}: eksik alan`);
+    assert.ok(c.focus.length === 3 && c.overview.position.length === 3 && c.overview.target.length === 3, `${id}: kamera`);
+    assert.ok(c.stage || c.court, `${id}: sahne veya saha yok`);
+    assert.ok(seatsForConfig(model, id).length > 1000, `${id}: koltuk çok az`);
+  }
+});
+
+test('ayakta konser: koltuk yok, yalnızca bakış noktaları; tribün ve localar oturmalı', () => {
+  const list = seatsForConfig(model, 'standing');
+  assert.ok(list.some((s) => s.style === 'standing' && s.noMesh));
+  assert.ok(list.every((s) => (s.style === 'standing') === (s.category === 'ayakta' || s.category === 'ayakta-gc')));
+  assert.ok(!list.some((s) => s.category === 'sahne-onu' || s.category === 'saha-ici'), 'zemin blokları ayakta düzende olmamalı');
+  const st = list.find((s) => s.noMesh);
+  assert.ok(Math.abs(st.eye[1] - 1.68) < 1e-6, 'ayakta göz yüksekliği 1,68 m');
+  assert.equal(seatsForConfig(model, 'standing').filter((s) => s.category === 'loca').length, 240);
+});
+
+test('gala: 24 masa × 10 sandalye, masaya bakar', () => {
+  const tables = [...model.blocks.values()].filter((b) => b.kind === 'tables');
+  assert.equal(tables.length, 24);
+  for (const t of tables) {
+    assert.equal(t.rows[0].seats.length, 10);
+    assert.match(blockLabel(t), /^Masa \d+$/);
+  }
+  const tb = config.tribunes.find((t) => t.kind === 'tables').tables[0];
+  const s = model.seats[tables[0].rows[0].seats[3]];
+  const toCenter = [tb.center[0] - s.pos[0], tb.center[1] - s.pos[2]];
+  assert.ok(s.facing[0] * toCenter[0] + s.facing[1] * toCenter[1] > 0.5, 'sandalye masa merkezine dönük');
+});
+
+test('kamera sınırı: yerin altına, çatının üstüne, duvar dışına çıkılamaz', () => {
+  const ground = makeGroundHeight(config);
+  const clamp = makeCameraBounds(config, ground);
+  const roof = config.hall.roof;
+  const cases = [
+    [0, -5, 0], [0, 80, 0], [100, 5, 0], [-100, 5, 0], [0, 5, 200], [0, 5, -200], [30, 5, 40], [-30, 5, 40],
+    [22, 0.1, 10], [-22, 0.1, -10], [0, 21, 0],
+  ];
+  const limit = config.hall.ring.frontX;
+  for (const [x, y, z] of cases) {
+    const p = clamp({ x, y, z });
+    assert.ok(Math.abs(p.x) <= limit, `x dışarıda: ${p.x}`);
+    assert.ok(p.z >= config.hall.ring.stageWallZ && p.z <= config.hall.ring.endFrontZ, `z dışarıda: ${p.z}`);
+    assert.ok(p.y >= ground(p.x, p.z) + 1.3, `yerin altında: ${p.y}`);
+    assert.ok(p.y <= roof.apexY - 3, `çatıda: ${p.y}`);
+  }
+  // salon içindeki makul bir nokta değişmez
+  const ok = clamp({ x: 3, y: 10, z: 5 });
+  assert.deepEqual([ok.x, ok.y, ok.z], [3, 10, 5]);
+});
+
+test('zemin yüksekliği: yan tribünde sıra sıra yükselir, zeminde 0', () => {
+  const g = makeGroundHeight(config);
+  assert.equal(g(0, 0), 0);
+  assert.ok(g(17, 0) > 0.5 && g(24, 0) > g(18, 0), 'yan tribün yükselmiyor');
+  assert.ok(g(0, 33) > g(0, 28), 'karşı tribün yükselmiyor');
 });

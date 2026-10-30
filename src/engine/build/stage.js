@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Batch } from '../batch.js';
 
 /** Kare kesitli truss: 4 ana boru + iki yüzde diyagonaller. a→b eksen, size kesit. */
-function truss(b, a, c, size = 0.4) {
+export function truss(b, a, c, size = 0.4) {
   const dir = new THREE.Vector3(c[0] - a[0], c[1] - a[1], c[2] - a[2]);
   const len = dir.length();
   dir.normalize();
@@ -28,14 +28,25 @@ function truss(b, a, c, size = 0.4) {
   }
 }
 
+/** FOH (ses/ışık) platformu: siyah kasa, çelik üst, konsol ve iki monitör. */
+export function fohBox(batch, fz, w = 5.8) {
+  batch.box('black', w, 0.9, 2.3, 0, 0.45, fz);
+  batch.box('steel', w + 0.1, 0.06, 2.4, 0, 0.93, fz);
+  batch.box('blackGloss', 3.2, 0.12, 0.9, 0, 1.12, fz - 0.4);
+  batch.box('black', 0.6, 0.35, 0.4, -1.0, 1.3, fz - 0.55);
+  batch.box('black', 0.6, 0.35, 0.4, 1.0, 1.3, fz - 0.55);
+}
+
 /** Konser düzeni: sahne, LED duvar, truss'lar, hoparlör dizileri, bariyer, FOH, ışık huzmeleri. */
 export function buildStage(ctx) {
-  const { config, mats, groups, hooks, anim, state } = ctx;
-  const cfg = config.configurations.concert;
+  const { config, mats, hooks, anim, state } = ctx;
+  // Rock sahnesi: oturmalı ve ayakta konserde ortak
+  const rockIds = Object.entries(config.configurations).filter(([, c]) => c.kind === 'rock').map(([id]) => id);
+  const cfg = config.configurations[rockIds[0]];
   const st = cfg.stage;
   const zc = st.z0 + st.depth / 2;
   const b = new Batch();
-  const root = groups.concert;
+  const root = ctx.groupFor(rockIds);
 
   // Platform
   b.box('stageDeck', st.width, st.height, st.depth, 0, st.height / 2, zc);
@@ -211,13 +222,21 @@ export function buildStage(ctx) {
   b.box('steel', barHalf * 2, 0.05, 0.05, 0, 0.5, barZ);
   for (let x = -barHalf; x <= barHalf + 0.01; x += 1.2) b.box('steel', 0.05, 1.15, 0.05, x, 0.57, barZ);
 
-  // FOH platformu (ön-arka blok arası enine koridor)
-  const fz = 4.85;
-  b.box('black', 5.8, 0.9, 2.3, 0, 0.45, fz);
-  b.box('steel', 5.9, 0.06, 2.4, 0, 0.93, fz);
-  b.box('blackGloss', 3.2, 0.12, 0.9, 0, 1.12, fz - 0.4);
-  b.box('black', 0.6, 0.35, 0.4, -1.0, 1.3, fz - 0.55);
-  b.box('black', 0.6, 0.35, 0.4, 1.0, 1.3, fz - 0.55);
+  // FOH (ses/ışık masası): oturmalıda ön-arka blok arası enine koridorda; ayakta konserde saha arkasında kule
+  const mkFoh = fohBox;
+  const fohSeated = new Batch();
+  mkFoh(fohSeated, 4.85);
+  ctx.groupFor(['concert']).add(fohSeated.build(mats, {}));
+  // Ayakta konser: saha arkasında FOH + ön/arka bölgeleri ayıran seyirci bariyeri + yan çit
+  const fohStanding = new Batch();
+  mkFoh(fohStanding, 22.4, 8);
+  for (const x of [-4, 4]) fohStanding.bar('steel', [x, 0.9, 21.2], [x, 3.4, 21.2], 0.06);
+  fohStanding.box('black', 8.2, 0.08, 2.5, 0, 3.4, 22.4);
+  const splitZ = -4.2;
+  fohStanding.box('steelLight', 29, 0.05, 0.05, 0, 1.12, splitZ);
+  fohStanding.box('steel', 29, 0.05, 0.05, 0, 0.5, splitZ);
+  for (let x = -14.5; x <= 14.51; x += 1.2) fohStanding.box('steel', 0.05, 1.15, 0.05, x, 0.57, splitZ);
+  ctx.groupFor(['standing']).add(fohStanding.build(mats, {}));
 
   root.add(b.build(mats, { uvScale: {} }));
   // lamba renkleri (emissive)
@@ -252,7 +271,7 @@ export function buildStage(ctx) {
   // Animasyon: LED duvar içeriği + huzme süpürmesi
   let last = 0;
   anim.push((t) => {
-    if (state.config !== 'concert') return;
+    if (!rockIds.includes(state.config)) return;
     for (const bm of beams) {
       bm.piv.rotation.x = -0.75 + Math.sin(t * 0.6 + bm.phase) * 0.28;
       bm.piv.rotation.z = Math.sin(t * 0.45 + bm.phase * 1.3) * 0.5;

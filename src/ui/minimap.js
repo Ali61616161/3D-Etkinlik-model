@@ -112,8 +112,9 @@ export class Minimap {
     ctx.fillStyle = 'rgba(255,255,255,0.035)';
     ctx.fillRect(fx0, fy0, fx1 - fx0, fy1 - fy0);
 
-    if (this.key === 'concert') {
-      const st = cfg.configurations.concert.stage;
+    const cc = cfg.configurations[this.key];
+    if (cc.stage) {
+      const st = cc.stage;
       const [x0, y0] = this._xy(-st.width / 2, st.z0);
       const [x1, y1] = this._xy(st.width / 2, st.z0 + st.depth);
       ctx.fillStyle = 'rgba(255,255,255,0.16)';
@@ -121,9 +122,9 @@ export class Minimap {
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
       ctx.font = '600 10px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('SAHNE', (x0 + x1) / 2, (y0 + y1) / 2 + 3);
+      ctx.fillText(cc.kind === 'symphony' ? 'ORKESTRA' : cc.kind === 'gala' ? 'PODYUM' : 'SAHNE', (x0 + x1) / 2, (y0 + y1) / 2 + 3);
     } else {
-      const c = cfg.configurations.basketball.court;
+      const c = cc.court;
       const [x0, y0] = this._xy(-c.width / 2, c.centerZ - c.length / 2);
       const [x1, y1] = this._xy(c.width / 2, c.centerZ + c.length / 2);
       ctx.fillStyle = 'rgba(214,176,120,0.5)';
@@ -158,7 +159,7 @@ export class Minimap {
       const loca = b.id.startsWith('L');
       ctx.font = `${loca ? 600 : 700} ${loca ? 7 : 9}px system-ui, sans-serif`;
       ctx.fillStyle = b.id === this.blockId ? '#fff' : 'rgba(255,255,255,0.62)';
-      const text = loca ? b.id.slice(1) : b.id.replace('VIP-', 'VIP ');
+      const text = loca ? b.id.slice(1) : b.kind === 'tables' ? b.id.slice(1) : b.id.replace('VIP-', 'VIP ');
       // etiketi bloğun içinde ortala
       ctx.fillText(text, x, y);
     }

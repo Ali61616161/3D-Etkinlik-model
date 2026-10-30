@@ -13,6 +13,11 @@
 //  Resmî teknik doküman (vwarena.com Promoters Pack PDF) elde edilince yalnızca bu dosya güncellenir.
 
 const SEAT = 0.46; // koltuk eni (m)
+
+// Etkinlik düzenleri (araştırma: konser oturmalı/ayakta, senfoni-film konseri, basketbol, gala-ödül-moda, e-spor)
+const ALL = ['concert', 'standing', 'symphony', 'basketball', 'gala', 'esports'];
+const STAGE_EVENTS = ['concert', 'standing', 'symphony', 'gala', 'esports'];
+const FLOOR_SEATED = ['concert', 'symphony', 'esports']; // zemin blokları 001–006 yalnızca bu düzenlerde
 const ROW = 0.8; // tribün sıra derinliği (m)
 const RISE = 0.38; // tribün sıra yükselmesi (m)
 const BASE = 0.6; // ilk sıranın zeminden yüksekliği (m)
@@ -40,6 +45,7 @@ export default {
       { label: 'Arkiv / Yazgan Design / Archello', use: 'zemin oturmalı 2.160, ek tribün 562, 286 t çelik çatı, malzeme ve renk paleti' },
       { label: 'vwarena.com – Main Hall Renting', use: 'sahne 1,5 m yükseklik, 160 m²; iki skorbord' },
       { label: 'Uniq İstanbul – VW Arena', use: '5.800 kişi; buz pisti/konferans/basketbol dönüşümü' },
+      { label: 'vwarena.com, Vikipedi, JamBase, Firsat.me, haberler.com (etkinlik türleri)', use: 'konser (oturmalı ≈4.500 / zemin ayakta ≈6.500), senfoni-film konseri, basketbol, ödül/moda gala, e-spor; ayrıntı docs/etkinlikler.md' },
       { label: 'Pozitif / vwarena.com galeri fotoğrafları, Eurohoops (2015)', use: 'yuvarlak köşeli kâse, siyah çit ve korkuluklar, sarı-siyah uyarı bantlı yeşil pota sehpası, LED reklam panoları, katlanır siyah koltuklar, sıcak parlak beton zemin (konser), asma LED küp' },
     ],
     assumptions: [
@@ -76,24 +82,87 @@ export default {
     estimated: true,
   },
 
+  // Etkinlik düzenleri. Araştırma (2026): konserler (pop/rock/metal; oturmalı ≈4.500, saha ayakta ≈6.500), senfoni ve film konseri
+  // (Harry Potter In Concert, "Adamlar – An Epic Symphony", Fazıl Say Nazım Oratoryosu), basketbol (Darüşşafaka, 5.240),
+  // e-spor (VALORANT Champions İstanbul), ödül/moda/gala (Men of the Year), konferans ve stand-up. Kaynaklar docs/etkinlikler.md.
   configurations: {
     concert: {
-      label: 'Konser',
+      label: 'Konser · oturmalı',
+      short: 'Konser',
+      kind: 'rock',
       lighting: 'concert',
+      floorMat: 'floorConcert',
       focus: [0, 3.4, -23], // koltuktan bakılan nokta (sahne ortası)
       focusLabel: 'Sahne',
       focusDative: 'Sahneye',
       overview: { position: [0, 15.5, 37], target: [0, 3, -8] },
       stage: { width: 16, depth: 10, height: 1.5, z0: -28 }, // 160 m², 1,5 m (vwarena.com)
+      note: 'Tam oturmalı konser: zemin blokları 001–006 + tribünler + localar (resmî ≈4.500–5.000).',
+    },
+    standing: {
+      label: 'Konser · ayakta',
+      short: 'Ayakta konser',
+      kind: 'rock',
+      lighting: 'concert',
+      floorMat: 'floorConcert',
+      focus: [0, 3.4, -23],
+      focusLabel: 'Sahne',
+      focusDative: 'Sahneye',
+      overview: { position: [0, 15.5, 37], target: [0, 3, -8] },
+      stage: { width: 16, depth: 10, height: 1.5, z0: -28 },
+      note: 'Zemin ayakta (Golden Circle + saha içi), tribünler ve localar oturmalı (resmî ≈6.500).',
+    },
+    symphony: {
+      label: 'Senfoni · film konseri',
+      short: 'Senfoni',
+      kind: 'symphony',
+      lighting: 'classical',
+      floorMat: 'floorConcert',
+      focus: [0, 3.2, -22],
+      focusLabel: 'Orkestra',
+      focusDative: 'Orkestraya',
+      overview: { position: [0, 15.5, 37], target: [0, 3, -8] },
+      stage: { width: 20, depth: 12, height: 1.2, z0: -28 },
+      note: 'Orkestra sahnesi + dev perde; tam oturmalı (ör. film konseri, senfoni gecesi).',
     },
     basketball: {
       label: 'Basketbol',
+      short: 'Basketbol',
+      kind: 'basketball',
       lighting: 'game',
+      floorMat: 'floorGame',
       focus: [0, 1.4, 0], // saha ortası
       focusLabel: 'Saha',
       focusDative: 'Sahaya',
       overview: { position: [0, 14.5, 34], target: [0, 2, 0] },
       court: { length: 28, width: 15, centerZ: 0 }, // FIBA ölçüsü
+      note: 'Saha ortada; saha içi bloklar yok. Yan ve uç ek tribünler, saha kenarı VIP (resmî 5.240).',
+    },
+    gala: {
+      label: 'Gala · ödül · moda',
+      short: 'Gala',
+      kind: 'gala',
+      lighting: 'gala',
+      floorMat: 'floorGala',
+      focus: [0, 2.4, -20],
+      focusLabel: 'Podyum',
+      focusDative: 'Podyuma',
+      overview: { position: [0, 15.5, 37], target: [0, 3, -6] },
+      stage: { width: 24, depth: 8, height: 1.0, z0: -28 },
+      note: '24 yuvarlak masa (10 sandalye), merkez podyum (runway), dev LED perde; tribün ve localar açık.',
+    },
+    esports: {
+      label: 'E-spor',
+      short: 'E-spor',
+      kind: 'esports',
+      lighting: 'esports',
+      floorMat: 'floorConcert',
+      focus: [0, 3.2, -23],
+      focusLabel: 'Sahne',
+      focusDative: 'Sahneye',
+      overview: { position: [0, 15.5, 37], target: [0, 3, -8] },
+      stage: { width: 22, depth: 10, height: 1.2, z0: -28 },
+      note: 'Takım masaları sahnede, dev LED duvar ve asma ekranlar; zemin oturmalı (ör. VALORANT Champions).',
     },
   },
 
@@ -105,6 +174,9 @@ export default {
     loca: { label: 'Loca', color: '#c084fc' },
     'ek-tribun': { label: 'Ek (Teleskopik) Tribün', color: '#a3e635' },
     vip: { label: 'Saha Kenarı VIP', color: '#f87171' },
+    'ayakta-gc': { label: 'Golden Circle (ayakta)', color: '#ff5d8f' },
+    ayakta: { label: 'Saha İçi Ayakta', color: '#ffb13d' },
+    masa: { label: 'Masa (gala)', color: '#facc15' },
   },
 
   // Tribün = ortak geometriyi paylaşan blok grubu.
@@ -115,7 +187,7 @@ export default {
     {
       id: 'floor-front',
       kind: 'flat',
-      configs: ['concert'],
+      configs: FLOOR_SEATED,
       group: 'Sahne Önü',
       origin: [0, -13],
       facing: [0, -1],
@@ -131,7 +203,7 @@ export default {
     {
       id: 'floor-back',
       kind: 'flat',
-      configs: ['concert'],
+      configs: FLOOR_SEATED,
       group: 'Saha İçi',
       origin: [0, 6.5],
       facing: [0, -1],
@@ -145,9 +217,51 @@ export default {
       ],
     },
     {
+      // Ayakta konser: sahne önü (Golden Circle) ve saha içi ayakta alan. Koltuk yok; yalnızca "ayakta bakış noktası"
+      // (göz yüksekliği 1,68 m). Resmî: zemin ayakta + tribün oturmalı ≈ 6.500 kişi.
+      id: 'standing-front',
+      kind: 'flat',
+      configs: ['standing'],
+      group: 'Sahne Önü Ayakta',
+      origin: [0, -12.4],
+      facing: [0, -1],
+      rows: 9,
+      rowPitch: 0.9,
+      seatPitch: 0.9,
+      seatStyle: 'standing',
+      blocks: [{ id: 'GC', name: 'Golden Circle (sahne önü ayakta)', lateral: 0, seats: 31, category: 'ayakta-gc' }],
+    },
+    {
+      id: 'standing-back',
+      kind: 'flat',
+      configs: ['standing'],
+      group: 'Saha İçi Ayakta',
+      origin: [0, -3.2],
+      facing: [0, -1],
+      rows: 28,
+      rowPitch: 0.9,
+      seatPitch: 0.9,
+      seatStyle: 'standing',
+      blocks: [{ id: 'AY', name: 'Saha İçi Ayakta', lateral: 0, seats: 31, category: 'ayakta' }],
+    },
+    {
+      // Gala / ödül / moda: 24 yuvarlak masa × 10 sandalye (Pozitif "Men of the Year" ve defile fotoğraflarına göre)
+      id: 'gala-tables',
+      kind: 'tables',
+      configs: ['gala'],
+      group: 'Masalar',
+      category: 'masa',
+      seatStyle: 'banquet',
+      radius: 1.18,
+      tables: Array.from({ length: 24 }, (_, i) => {
+        const col = i % 4, row = Math.floor(i / 4);
+        return { id: `M${i + 1}`, name: `Masa ${i + 1}`, center: [-10.8 + col * 7.2, -4.5 + row * 5.3], seats: 10 };
+      }),
+    },
+    {
       id: 'side-left',
       kind: 'rake',
-      configs: ['concert', 'basketball'],
+      configs: ALL,
       group: 'Yan Tribün (sol)',
       origin: [-16, 0],
       facing: [1, 0],
@@ -167,7 +281,7 @@ export default {
     {
       id: 'side-right',
       kind: 'rake',
-      configs: ['concert', 'basketball'],
+      configs: ALL,
       group: 'Yan Tribün (sağ)',
       origin: [16, 0],
       facing: [-1, 0],
@@ -187,7 +301,7 @@ export default {
     {
       id: 'stage-corner-left',
       kind: 'rake',
-      configs: ['concert', 'basketball'],
+      configs: ALL,
       group: 'Yan Tribün (sol)',
       origin: [-16, -23.4],
       facing: [1, 0],
@@ -201,7 +315,7 @@ export default {
     {
       id: 'stage-corner-right',
       kind: 'rake',
-      configs: ['concert', 'basketball'],
+      configs: ALL,
       group: 'Yan Tribün (sağ)',
       origin: [16, -23.4],
       facing: [-1, 0],
@@ -215,7 +329,7 @@ export default {
     {
       id: 'end',
       kind: 'rake',
-      configs: ['concert', 'basketball'],
+      configs: ALL,
       group: 'Karşı Tribün',
       origin: [0, 26.5],
       facing: [0, -1],
@@ -234,7 +348,7 @@ export default {
     {
       id: 'fan-left',
       kind: 'fan',
-      configs: ['concert', 'basketball'],
+      configs: ALL,
       group: 'Karşı Tribün',
       center: [-FLOOR_HALF, 26],
       angles: [98, 172], // derece, (x,z) düzleminde +x'ten +z'ye
@@ -248,7 +362,7 @@ export default {
     {
       id: 'fan-right',
       kind: 'fan',
-      configs: ['concert', 'basketball'],
+      configs: ALL,
       group: 'Karşı Tribün',
       center: [FLOOR_HALF, 26],
       angles: [8, 82],

@@ -27,8 +27,10 @@ const land = async () => {
   await frame();
 };
 
+const configs = await page.evaluate(() => Object.keys(window.__arena.config.configurations));
+const tested = new Set();
 let checked = 0;
-for (const cfg of ['concert', 'basketball']) {
+for (const cfg of configs) {
   await page.evaluate((c) => window.__arena.applyConfig(c, { fly: false }), cfg);
   await frame();
   const blocks = await page.evaluate((c) => [...window.__arena.model.blocks.values()].filter((b) => b.configs.includes(c)).map((b) => b.id), cfg);
@@ -41,7 +43,16 @@ for (const cfg of ['concert', 'basketball']) {
       const last = window.__arena.model.seats[lastRow.seats[lastRow.seats.length - 1]];
       return [first.id, last.id];
     }, id);
+    // blok seçimi (kamera karşıdan bakış) da denenir
+    await page.evaluate((bid) => window.__arena.selectBlock(bid), id);
+    await land();
+    const bv = await page.evaluate(() => ({ v: window.__arena.state.view, b: window.__arena.state.block?.id, p: window.__arena.camera.position.toArray() }));
+    if (bv.b !== id || bv.v !== 'overview') problems.push(`[${cfg}] blok görünümü hatalı: ${id} ${JSON.stringify(bv)}`);
+    const lim = await page.evaluate(() => { const c = window.__arena.config.hall; return [c.ring.frontX, c.roof.apexY]; });
+    if (Math.abs(bv.p[0]) > lim[0] || bv.p[1] > lim[1] || bv.p[1] < 0) problems.push(`[${cfg}] blok kamerası sınır dışı: ${id} ${bv.p.map((v) => v.toFixed(1))}`);
     for (const sid of ids) {
+      if (tested.has(sid)) continue; // ortak bloklar tek kez denenir
+      tested.add(sid);
       await page.evaluate((s) => window.__arena.selectSeat(window.__arena.seatById(s)), sid);
       await land();
       const r = await page.evaluate((s) => {

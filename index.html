@@ -20,10 +20,7 @@
             <small id="venueName">Volkswagen Arena İstanbul</small>
           </div>
         </div>
-        <div class="seg" id="cfgSeg" role="tablist" aria-label="Etkinlik düzeni">
-          <button data-cfg="concert" role="tab">Konser</button>
-          <button data-cfg="basketball" role="tab">Basketbol</button>
-        </div>
+        <label class="evt"><span>Etkinlik</span><select id="cfgSelect" aria-label="Etkinlik düzeni"></select></label>
         <div class="tools">
           <button id="btnTint" class="chip" aria-pressed="false" title="Koltukları kategori renklerine göre boya">Kategoriler</button>
           <button id="btnQuality" class="chip" title="Grafik kalitesi">Kalite: <span id="qLabel">Oto</span></button>
@@ -37,12 +34,13 @@
         <div class="panel-scroll">
           <section class="card" id="pickCard">
             <h2>Koltuk seç</h2>
+            <p class="evt-note" id="evtNote"></p>
             <div class="field"><label for="selBlock">Blok</label><select id="selBlock"></select></div>
             <div class="row2">
               <div class="field"><label for="selRow">Sıra</label><select id="selRow" disabled></select></div>
               <div class="field"><label for="selSeat">Koltuk</label><select id="selSeat" disabled></select></div>
             </div>
-            <p class="hint">Ya da salonda / planda bir koltuğa tıkla.</p>
+            <p class="hint">Salonda veya planda bir bloğa dokun: blok karşıdan görünür. Sonra bir koltuğa dokun ya da listeden seç.</p>
           </section>
 
           <section class="card" id="infoCard" hidden>

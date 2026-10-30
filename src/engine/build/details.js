@@ -123,7 +123,7 @@ export function buildDetails(ctx) {
 
   groups.structure.add(structure.build(mats, {}));
   groups.shell.add(shell.build(mats, { uvScale: {} }));
-  groups.basketball.add(game.build(mats, {}));
+  ctx.groupFor(['basketball']).add(game.build(mats, {}));
   const coveGroup = cove.build(mats, {});
   coveGroup.traverse((o) => (o.castShadow = false));
   groups.structure.add(coveGroup);

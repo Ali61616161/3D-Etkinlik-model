@@ -103,6 +103,8 @@ const STYLE_COLORS = {
   standard: new THREE.Color(0x15161a),
   vip: new THREE.Color(0x3d3f46),
   lounge: new THREE.Color(0x2e231e),
+  banquet: new THREE.Color(0x2b2e35),
+  standing: new THREE.Color(0x15161a),
 };
 const _hidden = new THREE.Matrix4().makeScale(0, 0, 0);
 
@@ -116,6 +118,7 @@ export function createSeatMeshes(seats, categories, quality) {
 
   const groups = new Map();
   for (const s of seats) {
+    if (s.noMesh) continue;
     const k = `${s.meshKey}:${s.geo}`;
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(s);
@@ -130,7 +133,7 @@ export function createSeatMeshes(seats, categories, quality) {
     const geo = geos[list[0].geo];
     const mesh = new THREE.InstancedMesh(geo, mat, list.length);
     mesh.name = `seats:${key}`;
-    mesh.userData.group = list[0].meshKey;
+    mesh.userData.configs = list[0].configs;
     mesh.castShadow = quality.shadows;
     mesh.receiveShadow = quality.shadows;
     mesh.frustumCulled = false;
@@ -150,6 +153,7 @@ export function createSeatMeshes(seats, categories, quality) {
   }
 
   const meshOf = (s) => meshes[s.meshName];
+  const drawn = (s) => !s.noMesh;
   const tmp = new THREE.Color();
   const _m = new THREE.Matrix4();
 
@@ -158,6 +162,7 @@ export function createSeatMeshes(seats, categories, quality) {
     geometry: geos.open,
     /** Kendi koltuğumuz: katlı oturak yerine kamera altında açık koltuk çizilir → örneği gizle. */
     setSeatHidden(s, hidden) {
+      if (!drawn(s)) return;
       const m = meshOf(s);
       if (hidden) {
         m.setMatrixAt(s.instanceId, _hidden);
@@ -171,6 +176,7 @@ export function createSeatMeshes(seats, categories, quality) {
     /** Kategori renkleri ve blok vurgusu. Varsayılan: gerçek koltuk rengi (siyah). */
     refreshColors({ tint, blockId, accent }) {
       for (const s of seats) {
+        if (!drawn(s)) continue;
         const m = meshOf(s);
         if (tint) tmp.copy(catColors[s.category] ?? STYLE_COLORS.standard).multiplyScalar(0.62);
         else tmp.copy(STYLE_COLORS[s.style] ?? STYLE_COLORS.standard);

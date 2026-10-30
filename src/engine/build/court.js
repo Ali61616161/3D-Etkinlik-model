@@ -20,9 +20,9 @@ function canvasTex(w, h, draw) {
  * asma LED küp (alt ışık halkalı) ve köşe skorbordları. Maç saati ve skor canlı akar.
  */
 export function buildCourt(ctx) {
-  const { config, mats, groups, anim, state } = ctx;
+  const { config, mats, anim, state } = ctx;
   const court = config.configurations.basketball.court;
-  const root = groups.basketball;
+  const root = ctx.groupFor(['basketball']);
   const hl = court.length / 2;
   const b = new Batch();
 

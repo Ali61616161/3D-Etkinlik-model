@@ -23,6 +23,11 @@ export class Markers {
       scene.add(m);
     }
     this.selected.scale.setScalar(1.14);
+    // ayakta bakış noktası: yerde parlayan disk
+    const pin = new THREE.CylinderGeometry(0.32, 0.32, 0.05, 20);
+    pin.setAttribute('color', new THREE.BufferAttribute(new Float32Array(pin.attributes.position.count * 3).fill(1), 3));
+    this.pinGeo = pin;
+    this.seatGeo = seatGeometry;
 
     const beamGeo = new THREE.CylinderGeometry(0.06, 0.06, 14, 12, 1, true);
     beamGeo.translate(0, 7, 0);
@@ -48,6 +53,7 @@ export class Markers {
   }
 
   _place(mesh, seat, scale) {
+    mesh.geometry = seat.noMesh ? this.pinGeo : this.seatGeo;
     mesh.position.set(seat.pos[0], seat.pos[1], seat.pos[2]);
     mesh.rotation.set(0, seat.yaw, 0);
     mesh.scale.setScalar(seat.scale * scale);

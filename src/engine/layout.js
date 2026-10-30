@@ -95,11 +95,14 @@ export function buildSeatModel(config) {
       category: block.category,
       style: block.style,
       geo: block.kind === 'rake' || block.kind === 'fan' ? 'folded' : 'open',
-      meshKey: block.configs.length > 1 ? 'shared' : block.configs[0],
+      group: block.group,
+      meshKey: [...block.configs].sort().join('+'),
+      noMesh: block.style === 'standing', // ayakta noktalar: koltuk çizilmez, yalnızca bakış noktası
     };
+    const eyeH = block.style === 'standing' ? 1.68 : eye * seat.scale;
     seat.eye = [
       s.pos[0] + s.facing[0] * 0.04,
-      s.pos[1] + eye * seat.scale,
+      s.pos[1] + eyeH,
       s.pos[2] + s.facing[1] * 0.04,
     ];
     seat.id = `${block.id}-${rowObj.label}-${s.seatNo}`;
@@ -127,6 +130,23 @@ export function buildSeatModel(config) {
   };
 
   for (const t of config.tribunes) {
+    if (t.kind === 'tables') {
+      // Yuvarlak masalar: her masa bir blok, tek sıra, etrafında sandalyeler (masaya bakar)
+      for (const tb of t.tables) {
+        const block = newBlock({ id: tb.id, name: tb.name, category: t.category, style: t.seatStyle }, t);
+        block.facing = [0, -1]; // sahneye bakan taraf (blok görünümünde kamera sahne tarafından bakar)
+        const rowObj = { index: 0, label: '1', seats: [] };
+        block.rows.push(rowObj);
+        for (let i = 0; i < tb.seats; i++) {
+          const ang = Math.PI / 2 + (i * Math.PI * 2) / tb.seats; // 1. sandalye sahneye en yakın
+          const x = tb.center[0] + t.radius * Math.cos(ang);
+          const z = tb.center[1] - t.radius * Math.sin(ang);
+          const f = [-Math.cos(ang), Math.sin(ang)];
+          addSeat(block, rowObj, { seatNo: i + 1, pos: [x, 0, z], yaw: Math.atan2(f[0], f[1]), facing: f });
+        }
+      }
+      continue;
+    }
     if (t.kind === 'fan') {
       const [cx, cz] = t.center;
       const a0 = t.angles[0] * DEG;
@@ -160,6 +180,7 @@ export function buildSeatModel(config) {
       const block = newBlock(b, t);
       block.facing = f;
       const rows = b.rows ?? t.rows;
+      const pitchHere = t.seatPitch ?? pitch;
       for (let r = 0; r < rows; r++) {
         const k = rows > 1 ? r / (rows - 1) : 0;
         const n = typeof b.seats === 'number' ? b.seats : Math.round(lerp(b.seats.near, b.seats.far, k));
@@ -171,7 +192,7 @@ export function buildSeatModel(config) {
         const cz = t.origin[1] + u[1] * b.lateral - f[1] * r * t.rowPitch;
         const y = baseY + r * rise;
         for (let i = 0; i < n; i++) {
-          const off = (i - (n - 1) / 2) * pitch;
+          const off = (i - (n - 1) / 2) * pitchHere;
           addSeat(block, rowObj, {
             seatNo: first + i,
             pos: [cx + u[0] * off, y, cz + u[1] * off],
@@ -187,7 +208,7 @@ export function buildSeatModel(config) {
   const lc = config.locas;
   const ring = ringLayout(config);
   const floorY = config.hall.ring.floorY;
-  const locaTribune = { id: 'locas', kind: 'loca', configs: ['concert', 'basketball'], group: 'Localar' };
+  const locaTribune = { id: 'locas', kind: 'loca', configs: Object.keys(config.configurations), group: 'Localar' };
   for (const L of ring.locas) {
     const f = L.facing;
     const u = [-f[1], f[0]];
@@ -241,4 +262,79 @@ export function seatsForConfig(model, configKey) {
 /** Bir konfigürasyondaki bloklar (gruba göre). */
 export function blocksForConfig(model, configKey) {
   return [...model.blocks.values()].filter((b) => b.configs.includes(configKey));
+}
+
+/**
+ * Zemin yüksekliği haritası: herhangi bir (x,z) noktasında tribün basamağının kotu.
+ * Kamera sınırlamasında "yerin altına inme" ve katı tribüne girmeyi engellemek için kullanılır.
+ */
+export function makeGroundHeight(config) {
+  const treads = config.tribunes.filter((t) => t.kind === 'rake' || t.kind === 'fan');
+  const ring = config.hall.ring;
+  return (x, z) => {
+    let h = 0;
+    for (const t of treads) {
+      if (t.kind === 'rake') {
+        const f = norm(t.facing);
+        const u = [-f[1], f[0]];
+        const dx = x - t.origin[0], dz = z - t.origin[1];
+        const depth = -(dx * f[0] + dz * f[1]);
+        const lat = dx * u[0] + dz * u[1];
+        if (lat < t.span[0] || lat > t.span[1]) continue;
+        const r = Math.floor(depth / t.rowPitch + 0.5);
+        if (r < 0) continue;
+        if (r < t.rows) h = Math.max(h, (t.baseY ?? 0) + r * (t.rise ?? 0));
+        else if (depth < t.rows * t.rowPitch + 1.4) h = Math.max(h, (t.baseY ?? 0) + (t.rows - 1) * (t.rise ?? 0));
+      } else {
+        const dx = x - t.center[0], dz = z - t.center[1];
+        const ang = Math.atan2(dz, dx);
+        const a0 = t.angles[0] * DEG, a1 = t.angles[1] * DEG;
+        if (ang < a0 - 0.05 || ang > a1 + 0.05) continue;
+        const r = Math.floor((Math.hypot(dx, dz) - t.r0) / t.rowPitch + 0.5);
+        if (r >= 0 && r < t.rows) h = Math.max(h, t.baseY + r * t.rise);
+      }
+    }
+    // loca halkası yürüme kotu
+    if (Math.abs(x) > ring.frontX - 1.2 && z > ring.wingZ && z < ring.chamferStartZ) h = Math.max(h, ring.floorY);
+    return h;
+  };
+}
+
+/**
+ * Genel görünüm kamerasının serbestçe dolaşabildiği hacim: salon içi, tribün ve zeminin üstünde,
+ * çatının altında. Sınırı aşan konum içeri/yukarı/aşağı doğru ittirilir (yerin altına, çatının üstüne,
+ * duvarların dışına çıkılamaz).
+ */
+export function makeCameraBounds(config, groundHeight) {
+  const ring = config.hall.ring, roof = config.hall.roof;
+  const xMax = ring.frontX - 1.2;
+  const zMin = ring.stageWallZ + 1.4;
+  const zMax = ring.endFrontZ - 1.4;
+  const cx = ring.frontX - (ring.endFrontZ - ring.chamferStartZ); // köşe yayının merkez x'i
+  const cz = ring.chamferStartZ;
+  const rc = ring.endFrontZ - ring.chamferStartZ - 1.2;
+  const yMax = roof.apexY - 3.2;
+  return (p) => {
+    p.x = Math.max(-xMax, Math.min(xMax, p.x));
+    p.z = Math.max(zMin, Math.min(zMax, p.z));
+    // yuvarlak köşe: yaya yaslan
+    const ax = Math.abs(p.x);
+    if (ax > cx && p.z > cz) {
+      const dx = ax - cx, dz = p.z - cz;
+      const d = Math.hypot(dx, dz);
+      if (d > rc) {
+        p.x = Math.sign(p.x) * (cx + (dx / d) * rc);
+        p.z = cz + (dz / d) * rc;
+      }
+    }
+    p.y = Math.max(groundHeight(p.x, p.z) + 1.4, Math.min(yMax, p.y));
+    return p;
+  };
+}
+
+/** Blok görünen adı: "Loca 7", "Masa 5", "Golden Circle…", "Blok 202". */
+export function blockLabel(b) {
+  if (b.locaNo) return `Loca ${b.locaNo}`;
+  if (b.kind === 'tables' || b.group === 'Sahne Önü Ayakta' || b.group === 'Saha İçi Ayakta' || b.id.startsWith('VIP')) return b.name;
+  return `Blok ${b.id}`;
 }

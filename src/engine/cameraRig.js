@@ -24,8 +24,10 @@ export class CameraRig {
     this.orbit = new OrbitControls(camera, dom);
     this.orbit.enableDamping = true;
     this.orbit.dampingFactor = 0.07;
-    this.orbit.minDistance = 4;
-    this.orbit.maxDistance = 70;
+    this.orbit.minDistance = 5;
+    this.orbit.maxDistance = 46;
+    this.orbit.enablePan = false; // pan kapalı: dokunmatikte iki parmakla yanlışlıkla salon dışına kayma olmasın
+    this.bounds = null; // (Vector3) => Vector3: genel görünümde kamerayı salon içinde tutar
     this.orbit.maxPolarAngle = Math.PI * 0.49;
     this.orbit.zoomSpeed = 0.8;
     this.orbit.rotateSpeed = 0.7;
@@ -126,6 +128,11 @@ export class CameraRig {
       }
     } else if (this.mode === 'orbit') {
       this.orbit.update();
+      if (this.bounds) {
+        const before = this.camera.position.clone();
+        this.bounds(this.camera.position);
+        if (before.distanceToSquared(this.camera.position) > 1e-6) this.camera.lookAt(this.orbit.target);
+      }
     }
   }
 

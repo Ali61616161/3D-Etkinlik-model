@@ -7,8 +7,11 @@ import { goboTexture, dotTexture } from '../textures.js';
  *  - ortak: havada süzülen toz/pırıltı parçacıkları (konserde ışık huzmelerinde belirgin, maçta ince)
  */
 export function buildEffects(ctx) {
-  const { groups, hooks, anim, state, scene, quality } = ctx;
-  const concert = groups.concert;
+  const { hooks, anim, state, scene, quality } = ctx;
+  const goboIds = ['concert', 'standing', 'esports', 'gala'];
+  const laserIds = ['concert', 'standing', 'esports'];
+  const goboGroup = ctx.groupFor(goboIds);
+  const laserGroup = ctx.groupFor(laserIds);
 
   // ── gobo desenleri (zemin) ───────────────────────────────────────────────────
   const goboTex = goboTexture();
@@ -27,7 +30,7 @@ export function buildEffects(ctx) {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(8, 8).rotateX(-Math.PI / 2), m);
     mesh.position.set(x, 0.05, z);
     mesh.renderOrder = 1;
-    concert.add(mesh);
+    goboGroup.add(mesh);
     gobos.push({ mesh, m, phase: i * 0.9 });
   });
 
@@ -49,7 +52,7 @@ export function buildEffects(ctx) {
     const pitch = new THREE.Group();
     pitch.add(new THREE.Mesh(beamGeo, m));
     yaw.add(pitch);
-    concert.add(yaw);
+    laserGroup.add(yaw);
     lasers.push({ yaw, pitch, m, phase: i * 0.8 });
   }
 
@@ -81,9 +84,11 @@ export function buildEffects(ctx) {
   dust.frustumCulled = false;
   scene.add(dust);
 
+  const dustLook = { concert: [0.38, 0xcfb8ff], standing: [0.42, 0xcfb8ff], esports: [0.4, 0xffb8c8], gala: [0.3, 0xffc8f0], symphony: [0.22, 0xffe3b8] };
   hooks.onConfig.push((key) => {
-    dust.material.opacity = key === 'concert' ? 0.38 : 0.12;
-    dust.material.color.set(key === 'concert' ? 0xcfb8ff : 0xffffff);
+    const [o, c] = dustLook[key] ?? [0.12, 0xffffff];
+    dust.material.opacity = o;
+    dust.material.color.set(c);
   });
 
   const p = geo.attributes.position;
@@ -94,14 +99,14 @@ export function buildEffects(ctx) {
     }
     p.needsUpdate = true;
 
-    if (state.config !== 'concert') return;
+    if (!goboIds.includes(state.config)) return;
     for (const g of gobos) {
       g.mesh.rotation.y = t * 0.35 + g.phase;
       g.m.color.setHSL(((t * 0.05 + g.phase / 6) % 1 + 1) % 1, 0.9, 0.5);
       g.m.opacity = 0.35 + 0.25 * Math.sin(t * 1.3 + g.phase);
     }
     // lazerler: 12 sn döngüde 8 sn açık; yelpaze süpürme
-    const on = t % 12 < 8;
+    const on = laserIds.includes(state.config) && t % 12 < 8;
     for (const l of lasers) {
       l.yaw.visible = on;
       l.yaw.rotation.y = Math.sin(t * 0.7 + l.phase) * 0.9;

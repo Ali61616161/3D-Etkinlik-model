@@ -14,11 +14,18 @@ const norm = (v) => {
  * Çıktı: ctx.groups.{shared,concert,basketball}'e eklenen birleşik mesh'ler.
  */
 export function buildBowl(ctx) {
-  const { config, mats, groups } = ctx;
-  const batches = { shared: new Batch(), concert: new Batch(), basketball: new Batch() };
-  const plaques = { shared: [], concert: [], basketball: [] };
-  const fences = { shared: [], concert: [], basketball: [] };
-  const keyOf = (t) => (t.configs.length > 1 ? 'shared' : t.configs[0]);
+  const { config, mats } = ctx;
+  // Tribünler etkinlik kümesine göre gruplanır (aynı düzen kümesinde görünenler tek mesh'te birleşir)
+  const lazy = (make) => new Proxy({}, { get: (o, k) => (k in o ? o[k] : (o[k] = make())) });
+  const batches = lazy(() => new Batch());
+  const plaques = lazy(() => []);
+  const fences = lazy(() => []);
+  const keyConfigs = {};
+  const keyOf = (t) => {
+    const k = [...t.configs].sort().join('+');
+    keyConfigs[k] = t.configs;
+    return k;
+  };
   const pitchSeat = config.dims.seatPitch;
 
   for (const t of config.tribunes) {
@@ -129,12 +136,13 @@ export function buildBowl(ctx) {
   for (const [key, batch] of Object.entries(batches)) {
     const g = batch.build(mats, { uvScale: { tread: 0.25 } });
     g.name = `bowl:${key}`;
-    groups[key].add(g);
-    if (plaques[key].length) groups[key].add(labelMesh(plaques[key], { cols: 8 }));
+    const grp = ctx.groupFor(keyConfigs[key]);
+    grp.add(g);
+    if (plaques[key].length) grp.add(labelMesh(plaques[key], { cols: 8 }));
     if (fences[key].length) {
       const m = new THREE.Mesh(mergeGeometries(fences[key], false), mats.fence);
       m.name = `fence:${key}`;
-      groups[key].add(m);
+      grp.add(m);
     }
   }
 }

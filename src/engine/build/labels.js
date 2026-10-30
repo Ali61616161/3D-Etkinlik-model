@@ -44,13 +44,16 @@ function mergeAll(geos) {
   return out;
 }
 
-/** Blok numara plaketleri: rampa tribünlerde arka üst duvar, zemin bloklarında yer yazısı. */
+/** Blok numara plaketleri: rampa tribünlerde arka üst duvar, zemin bloklarında yer yazısı, masalarda masa numarası. */
 export function buildBlockLabels(ctx) {
-  const { config, model, groups } = ctx;
-  const byKey = { shared: [], concert: [], basketball: [] };
+  const { config, model, groupFor } = ctx;
+  const byKey = {};
+  const keyConfigs = {};
   for (const t of config.tribunes) {
-    const key = t.configs.length > 1 ? 'shared' : t.configs[0];
-    for (const b of t.blocks) {
+    const key = [...t.configs].sort().join('+');
+    keyConfigs[key] = t.configs;
+    byKey[key] ??= [];
+    for (const b of t.blocks ?? t.tables) {
       const block = model.blocks.get(b.id);
       if (!block || b.id.startsWith('VIP')) continue;
       const rows = block.rows;
@@ -58,7 +61,9 @@ export function buildBlockLabels(ctx) {
       const mid = last.seats[Math.floor(last.seats.length / 2)];
       const seat = model.seats[mid];
       const f = seat.facing;
-      if (t.kind === 'flat') {
+      if (t.kind === 'tables') {
+        byKey[key].push({ text: b.id.replace('M', ''), pos: [b.center[0], 0.9, b.center[1]], rx: -Math.PI / 2, w: 0.6, h: 0.3 });
+      } else if (t.kind === 'flat') {
         // zemin: bloğun ön hattında yer yazısı (sahneye bakan okuyucu için)
         const first = rows[0];
         const s0 = model.seats[first.seats[Math.floor(first.seats.length / 2)]];
@@ -75,6 +80,6 @@ export function buildBlockLabels(ctx) {
     }
   }
   for (const [key, items] of Object.entries(byKey)) {
-    if (items.length) groups[key].add(labelMesh(items));
+    if (items.length) groupFor(keyConfigs[key]).add(labelMesh(items));
   }
 }

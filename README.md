@@ -13,7 +13,7 @@ npm run dev            # http://localhost:5173
 npm run build          # dist/  (siteye gömmek için)
 npm run build:single   # dist-single/index.html → tek dosya, çift tıkla açılır (demo / video çekimi)
 npm run stats          # koltuk sayıları + resmî rakamlarla karşılaştırma
-npm test               # 9 birim testi (koltuk modeli, plan aralıkları, çakışma, seçici)
+npm test               # 14 birim testi (koltuk modeli, plan aralıkları, çakışma, seçici, etkinlik düzenleri, kamera sınırı)
 npm run smoke          # tarayıcı duman testi (Playwright; her bloğun koltuk görünümü)
 ```
 
@@ -24,11 +24,11 @@ Yüksek = bloom + vinyet + 4096 gölge haritası + yumuşatılmış koltuklar, O
 
 | Eylem | Nasıl |
 |---|---|
-| Salonu döndür / yakınlaştır | Sürükle / tekerlek |
-| Koltuk seç | Salonda ya da planda tıkla, veya Blok → Sıra → Koltuk listesi |
+| Salonu döndür / yakınlaştır | Sürükle / tekerlek (kamera salon içinde sınırlıdır: yerin altına, çatının üstüne, duvarların dışına çıkılamaz) |
+| Koltuk seç | Salonda ya da planda bir **bloğa dokun** → blok karşıdan görünür → bir **koltuğa dokun**; ya da Blok → Sıra → Koltuk listesi |
 | Koltuktan bak | Seçince otomatik uçar; sürükleyerek etrafa bak, tekerlek/çimdik = yakınlaştır |
 | Komşu koltuk | ← → (koltuk), ↑ ↓ (sıra) · Esc = salona dön · Boşluk = sahneye/sahaya bak |
-| Konser ↔ Basketbol | Üstteki anahtar (saha içi bloklar yalnızca konserde; basketbolda saha + teleskopik ek tribün + saha kenarı VIP) |
+| Etkinlik düzeni | Üstteki seçici: Konser (oturmalı / ayakta), Senfoni · film konseri, Basketbol, Gala · ödül · moda, E-spor → [docs/etkinlikler.md](docs/etkinlikler.md) |
 | Kategori renkleri | "Kategoriler" düğmesi |
 
 ## Yapı

@@ -7,7 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 import config from './venue/volkswagen-arena.config.js';
-import { buildSeatModel, blocksForConfig } from './engine/layout.js';
+import { buildSeatModel, blocksForConfig, makeGroundHeight, makeCameraBounds, blockLabel } from './engine/layout.js';
 import { createVenue } from './engine/venue.js';
 import { CameraRig } from './engine/cameraRig.js';
 import { SeatPicker } from './engine/picker.js';
@@ -18,7 +18,9 @@ import { Minimap } from './ui/minimap.js';
 const QUALITY = {
   high: { label: 'Yüksek', shadows: true, shadowMap: 4096, pixelRatio: 2, bloom: true, antialias: true, seatDetail: 'high' },
   medium: { label: 'Orta', shadows: true, shadowMap: 2048, pixelRatio: 1.5, bloom: false, antialias: true, seatDetail: 'mid' },
-  low: { label: 'Düşük', shadows: false, shadowMap: 1024, pixelRatio: 1.25, bloom: false, antialias: true, seatDetail: 'low' },
+  low: { label: 'Düşük', shadows: false, shadowMap: 1024, pixelRatio: 1.5, bloom: false, antialias: true, seatDetail: 'low' },
+  // Telefon: yüksek yoğunluklu ekranda piksellenmeyi önlemek için 2× çözünürlük, hafif koltuk, tek seferlik gölge
+  mobile: { label: 'Mobil', shadows: true, shadowMap: 1024, pixelRatio: 2, bloom: false, antialias: true, seatDetail: 'low' },
 };
 const QUALITY_ORDER = ['auto', 'high', 'medium', 'low'];
 
@@ -30,7 +32,7 @@ function resolveQuality() {
   let key = pref;
   if (pref === 'auto') {
     const mobile = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 700;
-    key = mobile ? 'low' : 'high';
+    key = mobile ? 'mobile' : 'high';
   }
   return { pref, key, q: QUALITY[key] };
 }
@@ -100,6 +102,8 @@ export async function startApp() {
   const ownMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0.02, color: venue.seatVis.styleColor('standard') });
   const markers = new Markers(scene, venue.seatVis.geometry, ownMat);
   const rig = new CameraRig(camera, canvas);
+  const groundHeight = makeGroundHeight(config);
+  rig.bounds = makeCameraBounds(config, groundHeight); // yerin altına / çatının üstüne / duvar dışına çıkılamaz
   rig.overviewFov = overviewFovFor(camera.aspect);
   rig.seatFov = camera.aspect < 1 ? 88 : 72;
   if (matchMedia('(max-width: 860px)').matches) document.getElementById('panel').classList.remove('open');
@@ -107,10 +111,10 @@ export async function startApp() {
   const minimap = new Minimap(document.getElementById('mini'), {
     model,
     config,
-    onPick: (s) => selectSeat(s),
+    onPick: (s) => handlePick(s),
     onHover: (s, e) => {
-      markers.setHover(s);
-      if (s && e) ui.tip(seatText(s), e.clientX, e.clientY);
+      hoverSeat(s);
+      if (s && e) ui.tip(hoverText(s), e.clientX, e.clientY);
       else ui.tip(null);
     },
   });
@@ -131,11 +135,7 @@ export async function startApp() {
   const state = { cfg: 'concert', seat: null, block: null, tint: false, view: 'overview' };
   const blockOf = (s) => model.blocks.get(s.blockId);
   const cfgOf = () => config.configurations[state.cfg];
-  const seatText = (s) => {
-    const b = blockOf(s);
-    const bn = b.id.startsWith('L') ? `Loca ${b.locaNo}` : b.id.startsWith('VIP') ? b.name : `Blok ${b.id}`;
-    return `${bn} · Sıra ${s.rowLabel} · Koltuk ${s.seatNo}`;
-  };
+  const seatText = (s) => `${blockLabel(blockOf(s))} · Sıra ${s.rowLabel} · ${s.style === 'standing' ? 'Nokta' : 'Koltuk'} ${s.seatNo}`;
 
   function refreshColors() {
     // Blok vurgusu yalnızca blok seçili ve koltuk seçili değilken (koltuk görünümünde çevredeki koltuklar boyanmaz)
@@ -175,7 +175,35 @@ export async function startApp() {
   }
 
   // ── blok / sıra / koltuk ──
-  function selectBlock(id) {
+  /** Bloğa karşıdan bakış: blok ekranı dolduracak mesafede, kortlara bakan taraftan, hafif yukarıdan. */
+  function blockViewPose(block) {
+    const f = block.facing, u = [-f[1], f[0]];
+    let minU = Infinity, maxU = -Infinity, minD = Infinity, maxD = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const row of block.rows) {
+      for (const i of row.seats) {
+        const p = model.seats[i].pos;
+        const du = p[0] * u[0] + p[2] * u[1], dd = p[0] * f[0] + p[2] * f[1];
+        minU = Math.min(minU, du); maxU = Math.max(maxU, du);
+        minD = Math.min(minD, dd); maxD = Math.max(maxD, dd);
+        minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
+      }
+    }
+    const el = block.kind === 'flat' || block.kind === 'tables' ? 0.62 : 0.34;
+    const vfov = (rig.overviewFov * Math.PI) / 180;
+    const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
+    const w = maxU - minU + 1.6;
+    const hProj = (maxY - minY + 1.2) * Math.cos(el) + (maxD - minD + 0.8) * Math.sin(el);
+    const dist = Math.max(w / 2 / Math.tan(hfov / 2), hProj / 2 / Math.tan(vfov / 2)) * 1.32 + 3;
+    const c = block.center;
+    // masaüstünde sağ panel görüşün bir kısmını kapatır: bloğu ekranın soluna doğru kaydır
+    const shift = innerWidth > 860 ? Math.tan(hfov / 2) * dist * 0.26 : 0;
+    const sx = -u[0] * shift, sz = -u[1] * shift;
+    const pos = new THREE.Vector3(c[0] + sx + f[0] * dist * Math.cos(el), c[1] + 1 + dist * Math.sin(el), c[2] + sz + f[1] * dist * Math.cos(el));
+    rig.bounds(pos);
+    return { position: pos.toArray(), target: [c[0] + sx, c[1] + 0.7, c[2] + sz] };
+  }
+
+  function selectBlock(id, { hint = false } = {}) {
     const block = model.blocks.get(id);
     if (!block) return;
     if (state.view === 'seat') exitSeat(false);
@@ -187,10 +215,32 @@ export async function startApp() {
     ui.setBlock(block);
     ui.showSeat(null);
     refreshColors();
-    const c = block.center, f = block.facing;
-    const lift = block.kind === 'flat' ? 10 : 8;
-    rig.flyToOrbit([c[0] + f[0] * 16, c[1] + lift, c[2] + f[1] * 16], [c[0], c[1] + 1.2, c[2]], { duration: 1.5 });
+    const pose = blockViewPose(block);
+    rig.flyToOrbit(pose.position, pose.target, { duration: 1.4 });
+    if (hint) ui.toast(`${blockName(block)} · bir koltuğa dokun`, 2600);
   }
+
+  /**
+   * Salondan/plandan tıklama: önce BLOK seçilir ve karşıdan bakılır (uzaktan tek koltuğu vurmak zor);
+   * aynı bloğun içindeyken bir koltuğa tıklanırsa o koltuğun gözüne inilir.
+   */
+  function handlePick(seat) {
+    const block = blockOf(seat);
+    if (state.view === 'overview' && state.block && state.block.id === block.id) selectSeat(seat);
+    else selectBlock(block.id, { hint: true });
+  }
+
+  function hoverSeat(seat) {
+    // yalnızca seçili blok içindeki koltuklar tek tek vurgulanır
+    markers.setHover(seat && state.block && seat.blockId === state.block.id ? seat : null);
+  }
+
+  function hoverText(seat) {
+    const b = blockOf(seat);
+    return state.block && state.block.id === b.id ? seatText(seat) : `${blockName(b)} · blok görünümü için dokun`;
+  }
+
+  const blockName = blockLabel;
 
   function onRow(rowIndex) {
     if (!state.block) return;
@@ -216,7 +266,7 @@ export async function startApp() {
     if (ownSeat) venue.seatVis.setSeatHidden(ownSeat, false);
     ownSeat = seat;
     if (seat) venue.seatVis.setSeatHidden(seat, true);
-    markers.setOwn(seat);
+    markers.setOwn(seat && !seat.noMesh ? seat : null);
   }
 
   function selectSeat(seat, { fly = true, keepLook = false } = {}) {
@@ -338,7 +388,7 @@ export async function startApp() {
     if (!d || rig.mode !== 'orbit') return;
     if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || performance.now() - d.t > 600) return;
     const s = pickAt(e.clientX, e.clientY);
-    if (s) selectSeat(s);
+    if (s) handlePick(s);
   });
 
   window.addEventListener('keydown', (e) => {
@@ -388,8 +438,8 @@ export async function startApp() {
     if (mouse.dirty && rig.mode === 'orbit' && !mouse.down) {
       mouse.dirty = false;
       const s = pickAt(mouse.x, mouse.y);
-      markers.setHover(s);
-      ui.tip(s ? seatText(s) : null, mouse.x, mouse.y);
+      hoverSeat(s);
+      ui.tip(s ? hoverText(s) : null, mouse.x, mouse.y);
       canvas.style.cursor = s ? 'pointer' : '';
     }
     if (composer) composer.render();
@@ -410,6 +460,7 @@ export async function startApp() {
     renderer,
     applyConfig,
     selectBlock,
+    handlePick,
     selectSeat,
     exitSeat,
     seatById: (id) => model.seats.find((s) => s.id === id),
