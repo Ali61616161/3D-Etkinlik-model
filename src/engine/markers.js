@@ -2,7 +2,12 @@ import * as THREE from 'three';
 
 /** Seçili / üzerine gelinen koltuk işaretçileri + seçili koltuk üstünde ışık sütunu. */
 export class Markers {
-  constructor(scene, seatGeometry) {
+  constructor(scene, seatGeometry, ownMaterial) {
+    // Koltuk görünümünde: kendi oturduğumuz koltuk (açık oturaklı, gerçek siyah renk)
+    this.own = new THREE.Mesh(seatGeometry, ownMaterial);
+    this.own.visible = false;
+    this.own.frustumCulled = false;
+    scene.add(this.own);
     this.selected = new THREE.Mesh(
       seatGeometry,
       new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(2.6, 0.95, 0.15), toneMapped: false }),
@@ -65,6 +70,11 @@ export class Markers {
   }
 
   /** Işık sütunu yalnızca genel görünümde. */
+  setOwn(seat) {
+    this.own.visible = !!seat;
+    if (seat) this._place(this.own, seat, 1);
+  }
+
   setBeamAllowed(v) {
     this.beamAllowed = v;
     this._syncBeam();

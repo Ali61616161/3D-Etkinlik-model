@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Batch } from '../batch.js';
+import { labelMesh } from './labels.js';
 
 const DEG = Math.PI / 180;
 const norm = (v) => {
@@ -14,6 +15,7 @@ const norm = (v) => {
 export function buildBowl(ctx) {
   const { config, mats, groups } = ctx;
   const batches = { shared: new Batch(), concert: new Batch(), basketball: new Batch() };
+  const plaques = { shared: [], concert: [], basketball: [] };
   const keyOf = (t) => (t.configs.length > 1 ? 'shared' : t.configs[0]);
   const pitchSeat = config.dims.seatPitch;
 
@@ -62,6 +64,19 @@ export function buildBowl(ctx) {
         const top = baseY + r * rise;
         const [cx, cz] = at(mid, r * rowPitch - rowPitch / 2 + 0.05);
         b.box('nosing', gap, 0.03, 0.09, cx, top + 0.012, cz, ry);
+        // basamak ışıkları (koridor kenarlarında) + sıra numarası levhası (riser üzerinde)
+        for (const lat of [eL + 0.07, eR - 0.07]) {
+          const [lx, lz] = at(lat, r * rowPitch - rowPitch / 2 - 0.008);
+          b.box('lampWarm', 0.07, 0.035, 0.02, lx, top - (r === 0 ? baseY / 2 : rise / 2) + 0.07, lz, ry);
+        }
+        const [px, pz] = at(mid, r * rowPitch - rowPitch / 2 - 0.006);
+        plaques[keyOf(t)].push({
+          text: String(r + 1),
+          pos: [px, top - (r === 0 ? baseY / 2 : rise / 2), pz],
+          ry,
+          w: 0.2,
+          h: 0.1,
+        });
       }
       if (rise > 0) {
         for (const lat of [eL + 0.04, eR - 0.04]) {
@@ -108,5 +123,6 @@ export function buildBowl(ctx) {
     const g = batch.build(mats, { uvScale: { tread: 0.25 } });
     g.name = `bowl:${key}`;
     groups[key].add(g);
+    if (plaques[key].length) groups[key].add(labelMesh(plaques[key], { cols: 8 }));
   }
 }

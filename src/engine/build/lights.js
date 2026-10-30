@@ -49,7 +49,7 @@ export function buildLights(ctx) {
 
   const presets = {
     game: { hemi: 0.9, sun: 1.0, game: 1500, wash: 0, bg: 0x0a0b0e },
-    concert: { hemi: 0.42, sun: 0.22, game: 0, wash: 900, bg: 0x050608 },
+    concert: { hemi: 0.42, sun: 0.22, game: 0, wash: 480, bg: 0x050608 },
   };
 
   hooks.onConfig.push((key, config) => {
@@ -63,6 +63,6 @@ export function buildLights(ctx) {
 
   anim.push((t) => {
     if (state.config !== 'concert') return;
-    wash.forEach((l, i) => l.color.setHSL(((t * 0.06 + i / 3) % 1 + 1) % 1, 0.85, 0.55));
+    wash.forEach((l, i) => l.color.setHSL(((t * 0.06 + i / 3) % 1 + 1) % 1, 0.6, 0.6));
   });
 }

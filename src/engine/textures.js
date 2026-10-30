@@ -30,6 +30,10 @@ export function concreteTexture(seed = 7) {
     img.data[i + 2] += n;
   }
   ctx.putImageData(img, 0, 0);
+  // dilatasyon / panel derzleri (her 4 m'de bir)
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fillRect(0, 0, 512, 3);
+  ctx.fillRect(0, 0, 3, 512);
   for (let i = 0; i < 60; i++) {
     const x = r() * 512, y = r() * 512, rad = 20 + r() * 80;
     const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
@@ -239,4 +243,34 @@ export function labelAtlas(texts, cols = 8, cellW = 256, cellH = 128) {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   return { texture: tex, uvs };
+}
+
+/** Yeşil acil çıkış levhası. */
+export function exitSignTexture() {
+  const [c, ctx] = canvas(256, 96);
+  ctx.fillStyle = '#0c8f4a';
+  ctx.fillRect(0, 0, 256, 96);
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(5, 5, 246, 86);
+  ctx.fillStyle = '#fff';
+  ctx.font = '800 46px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('ÇIKIŞ', 150, 50);
+  // koşan figür
+  ctx.beginPath();
+  ctx.arc(52, 28, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 7;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(48, 40); ctx.lineTo(60, 56); ctx.lineTo(42, 72);
+  ctx.moveTo(60, 56); ctx.lineTo(76, 66);
+  ctx.moveTo(48, 42); ctx.lineTo(30, 50);
+  ctx.moveTo(52, 42); ctx.lineTo(70, 36);
+  ctx.stroke();
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }

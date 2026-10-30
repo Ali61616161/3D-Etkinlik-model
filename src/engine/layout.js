@@ -70,6 +70,7 @@ export function buildSeatModel(config) {
       configs: block.configs,
       category: block.category,
       style: block.style,
+      geo: block.kind === 'rake' || block.kind === 'fan' ? 'folded' : 'open',
       meshKey: block.configs.length > 1 ? 'shared' : block.configs[0],
     };
     seat.eye = [

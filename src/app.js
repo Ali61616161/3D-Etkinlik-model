@@ -15,9 +15,9 @@ import { createUI } from './ui/ui.js';
 import { Minimap } from './ui/minimap.js';
 
 const QUALITY = {
-  high: { label: 'Yüksek', shadows: true, shadowMap: 4096, pixelRatio: 2, bloom: true, antialias: true },
-  medium: { label: 'Orta', shadows: true, shadowMap: 2048, pixelRatio: 1.5, bloom: false, antialias: true },
-  low: { label: 'Düşük', shadows: false, shadowMap: 1024, pixelRatio: 1, bloom: false, antialias: false },
+  high: { label: 'Yüksek', shadows: true, shadowMap: 4096, pixelRatio: 2, bloom: true, antialias: true, seatDetail: 'high' },
+  medium: { label: 'Orta', shadows: true, shadowMap: 2048, pixelRatio: 1.5, bloom: false, antialias: true, seatDetail: 'high' },
+  low: { label: 'Düşük', shadows: false, shadowMap: 1024, pixelRatio: 1, bloom: false, antialias: false, seatDetail: 'low' },
 };
 const QUALITY_ORDER = ['auto', 'high', 'medium', 'low'];
 
@@ -34,7 +34,7 @@ function resolveQuality() {
   return { pref, key, q: QUALITY[key] };
 }
 
-const AUTO_ACCENT = new THREE.Color(1.0, 0.48, 0.1);
+const AUTO_ACCENT = new THREE.Color(0.1, 0.5, 0.95); // blok vurgusu: mavi (koltuk görünümünde hiç kullanılmaz)
 
 export async function startApp() {
   const { pref, key: qKey, q: quality } = resolveQuality();
@@ -88,7 +88,8 @@ export async function startApp() {
 
   const venue = createVenue({ config, model, quality, scene });
   const picker = new SeatPicker(model);
-  const markers = new Markers(scene, venue.seatVis.geometry);
+  const ownMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.58, metalness: 0.06, color: venue.seatVis.styleColor('standard') });
+  const markers = new Markers(scene, venue.seatVis.geometry, ownMat);
   const rig = new CameraRig(camera, canvas);
   rig.overviewFov = overviewFovFor(camera.aspect);
   rig.seatFov = camera.aspect < 1 ? 88 : 72;
@@ -128,8 +129,10 @@ export async function startApp() {
 
   function refreshColors() {
     // Blok vurgusu yalnızca blok seçili ve koltuk seçili değilken (koltuk görünümünde çevredeki koltuklar boyanmaz)
-    const blockId = state.block && !state.seat ? state.block.id : null;
-    venue.seatVis.refreshColors({ tint: state.tint, blockId, accent: AUTO_ACCENT });
+    // Koltuk görünümünde koltuklar HER ZAMAN gerçek (siyah) renginde çizilir: kategori boyası ve blok vurgusu kapalı.
+    const inSeat = state.view === 'seat';
+    const blockId = state.block && !state.seat && !inSeat ? state.block.id : null;
+    venue.seatVis.refreshColors({ tint: state.tint && !inSeat, blockId, accent: AUTO_ACCENT });
   }
 
   function invalidateShadows() {
@@ -142,6 +145,7 @@ export async function startApp() {
     state.seat = null;
     state.block = null;
     state.view = 'overview';
+    setOwnSeat(null);
     venue.setConfig(key);
     picker.setConfig(key);
     minimap.setConfig(key);
@@ -197,8 +201,17 @@ export async function startApp() {
     };
   }
 
+  let ownSeat = null;
+  function setOwnSeat(seat) {
+    if (ownSeat) venue.seatVis.setSeatHidden(ownSeat, false);
+    ownSeat = seat;
+    if (seat) venue.seatVis.setSeatHidden(seat, true);
+    markers.setOwn(seat);
+  }
+
   function selectSeat(seat, { fly = true, keepLook = false } = {}) {
     const block = blockOf(seat);
+    if (fly) state.view = 'seat';
     state.seat = seat;
     state.block = block;
     ui.setBlock(block, seat.rowIndex, seat);
@@ -208,7 +221,7 @@ export async function startApp() {
     minimap.setBlock(block.id);
     refreshColors();
     if (!fly) return;
-    state.view = 'seat';
+    setOwnSeat(seat);
     ui.setHud(seat, block, true, cfgOf().focusDative);
     markers.setBeamAllowed(false);
     let lookDir = null;
@@ -223,6 +236,8 @@ export async function startApp() {
   function exitSeat(fly = true) {
     if (state.view !== 'seat') return;
     state.view = 'overview';
+    setOwnSeat(null);
+    refreshColors();
     ui.setHud(null, null, false);
     markers.setBeamAllowed(true);
     if (!matchMedia('(max-width: 860px)').matches) document.getElementById('panel').classList.add('open');
@@ -264,10 +279,19 @@ export async function startApp() {
   function cycleQuality() {
     const i = QUALITY_ORDER.indexOf(pref);
     const next = QUALITY_ORDER[(i + 1) % QUALITY_ORDER.length];
-    try { localStorage.setItem('arena.quality', next); } catch { /* yoksay */ }
+    try {
+      localStorage.setItem('arena.quality', next);
+    } catch {
+      ui.toast('Bu ortamda kalite ayarı kaydedilemiyor');
+      return;
+    }
     const u = new URL(location.href);
-    u.searchParams.delete('q');
-    location.href = u.toString();
+    if (u.searchParams.has('q')) {
+      u.searchParams.delete('q');
+      location.href = u.toString();
+    } else {
+      location.reload();
+    }
   }
 
   function setTint(on) {

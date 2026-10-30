@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Batch } from '../batch.js';
-import { courtTexture, ledPanelTexture } from '../textures.js';
+import { courtTexture, ledPanelTexture, ledRibbonTexture } from '../textures.js';
 
 /** Basketbol düzeni: FIBA parkesi, potalar, masa/yedek kulübesi, asma LED küp, skorbordlar. */
 export function buildCourt(ctx) {
@@ -105,7 +105,26 @@ export function buildCourt(ctx) {
     b.box('black', 3.5, 1.8, 0.14, sb.position.x + s * 0.01, sb.position.y, sb.position.z - 0.09, -s * 0.5);
   }
 
+  // Saha çevresi LED reklam panoları (kayan yazı): iki baz çizgisi + sol kenar
+  const adTex = ledRibbonTexture('VW ARENA  ★  İSTANBUL  ★  BASKET', '#9fe8ff');
+  adTex.repeat.set(2, 1);
+  const adMat = new THREE.MeshBasicMaterial({ map: adTex, toneMapped: false, color: new THREE.Color(1.25, 1.25, 1.25) });
+  const adBoard = (len, x, z, ry) => {
+    const g = new THREE.PlaneGeometry(len, 0.88);
+    const uv = g.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * (len / 6));
+    const m = new THREE.Mesh(g, adMat);
+    m.position.set(x, 0.5, z);
+    m.rotation.y = ry;
+    root.add(m);
+    b.box('black', len + 0.1, 0.96, 0.1, x - Math.sin(ry) * 0.06, 0.48, z - Math.cos(ry) * 0.06, ry);
+  };
+  adBoard(13.2, 0, hl + 0.95, Math.PI); // güney baz (yüzü sahaya)
+  adBoard(13.2, 0, -hl - 0.95, 0);
+  adBoard(9.5, -8.6, 0, Math.PI / 2);
+
   root.add(b.build(mats, {}));
-  anim.push(() => {});
-  void state;
+  anim.push((t) => {
+    if (state.config === 'basketball') adTex.offset.x = (t * 0.04) % 1;
+  });
 }

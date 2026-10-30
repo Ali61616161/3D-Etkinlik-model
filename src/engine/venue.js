@@ -4,6 +4,7 @@ import { createSeatMeshes } from './seats.js';
 import { buildBowl } from './build/bowl.js';
 import { buildShell } from './build/shell.js';
 import { buildLocas } from './build/locas.js';
+import { buildDetails } from './build/details.js';
 import { buildBlockLabels } from './build/labels.js';
 import { buildStage } from './build/stage.js';
 import { buildCourt } from './build/court.js';
@@ -34,13 +35,14 @@ export function createVenue({ config, model, quality, scene }) {
   buildBowl(ctx);
   buildShell(ctx);
   buildLocas(ctx);
+  buildDetails(ctx);
   buildBlockLabels(ctx);
   buildStage(ctx);
   buildCourt(ctx);
   buildLights(ctx);
 
   const seatVis = createSeatMeshes(model.seats, config.categories, quality);
-  for (const [key, mesh] of Object.entries(seatVis.meshes)) groups[key].add(mesh);
+  for (const mesh of Object.values(seatVis.meshes)) groups[mesh.userData.group].add(mesh);
 
   const roofCfg = config.hall.roof;
   const ringCfg = config.hall.ring;
