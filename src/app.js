@@ -25,16 +25,28 @@ const QUALITY = {
 };
 const QUALITY_ORDER = ['auto', 'high', 'medium', 'low'];
 
+/** Cihaz gücüne göre otomatik seviye: telefon → mobil; yazılım render / az çekirdek / az bellek → düşük-orta; diğer → yüksek. */
+function autoQuality() {
+  const mobile = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 700;
+  if (mobile) return 'mobile';
+  let gpu = '';
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    const ext = gl?.getExtension('WEBGL_debug_renderer_info');
+    gpu = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
+  } catch { /* yoksay */ }
+  if (/swiftshader|llvmpipe|software|basic render/i.test(gpu)) return 'low';
+  const mem = navigator.deviceMemory ?? 8, cores = navigator.hardwareConcurrency ?? 8;
+  if (mem <= 4 || cores <= 4 || /Intel.*(HD|UHD) Graphics [0-9]{3}\b/i.test(gpu)) return 'medium';
+  return 'high';
+}
+
 function resolveQuality() {
   const url = new URLSearchParams(location.search).get('q');
   let pref = url;
   try { pref = pref || localStorage.getItem('arena.quality'); } catch { /* özel pencere */ }
   if (!QUALITY_ORDER.includes(pref) && pref !== 'mobile') pref = 'auto';
-  let key = pref;
-  if (pref === 'auto') {
-    const mobile = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 700;
-    key = mobile ? 'mobile' : 'high';
-  }
+  const key = pref === 'auto' ? autoQuality() : pref;
   return { pref, key, q: QUALITY[key] };
 }
 
@@ -46,7 +58,7 @@ const VignetteShader = {
     'uniform sampler2D tDiffuse; uniform float strength; varying vec2 vUv; void main(){ vec4 c = texture2D(tDiffuse, vUv); float v = smoothstep(0.9, 0.25, length(vUv - 0.5) * 1.2); c.rgb *= mix(1.0 - strength, 1.0, v); gl_FragColor = c; }',
 };
 
-const AUTO_ACCENT = new THREE.Color(0.1, 0.5, 0.95); // blok vurgusu: mavi (koltuk görünümünde hiç kullanılmaz)
+const AUTO_ACCENT = new THREE.Color(0.04, 0.3, 0.7); // blok vurgusu: mavi (koltuk görünümünde hiç kullanılmaz)
 
 export async function startApp() {
   const { pref, key: qKey, q: quality } = resolveQuality();
@@ -91,13 +103,22 @@ export async function startApp() {
       onClearBlock: () => clearBlock(),
       onCrowd: (on) => setCrowd(on),
       onTint: (on) => { state.tint = on; refreshColors(); },
-      onQuality: () => cycleQuality(),
+      qualityOptions: () => [
+        { key: 'auto', label: 'Otomatik', sub: '' },
+        { key: 'high', label: 'Yüksek', sub: 'güçlü bilgisayar' },
+        { key: 'medium', label: 'Orta', sub: 'dengeli' },
+        { key: 'low', label: 'Düşük', sub: 'eski cihaz, akıcı' },
+      ],
+      onQualityPick: (k) => setQualityPref(k),
+      onStandZone: (ix, iz) => standZone(ix, iz),
+      onStandHeight: (h) => { standH = h; if (state.view === 'seat' && state.seat?.style === 'standing') viewStanding(state.seat); },
+      onMapShown: () => minimap.resize(),
       onStep: (ds, dr) => step(ds, dr),
       onResetLook: () => resetLook(),
       onExit: () => exitSeat(),
     },
   });
-  ui.setQuality(pref === 'auto' ? `Oto (${QUALITY[qKey].label})` : QUALITY[qKey].label);
+  ui.setQuality(pref === 'mobile' ? 'auto' : pref, pref === 'auto' || pref === 'mobile' ? QUALITY[qKey].label : '');
   ui.setLoading('Koltuklar, tribünler ve çatı yapısı üretiliyor');
   await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
 
@@ -141,7 +162,7 @@ export async function startApp() {
   const crowdChoice = {}; // düzen başına kullanıcı tercihi
   const blockOf = (s) => model.blocks.get(s.blockId);
   const cfgOf = () => config.configurations[state.cfg];
-  const seatText = (s) => `${blockLabel(blockOf(s))} · Sıra ${s.rowLabel} · ${s.style === 'standing' ? 'Nokta' : 'Koltuk'} ${s.seatNo}`;
+  const seatText = (s) => (s.style === 'standing' ? 'Ayakta · buradan göster' : `${blockLabel(blockOf(s))} · Sıra ${s.rowLabel} · Koltuk ${s.seatNo}`);
 
   function refreshColors() {
     // Blok vurgusu yalnızca blok seçili ve koltuk seçili değilken (koltuk görünümünde çevredeki koltuklar boyanmaz)
@@ -260,6 +281,7 @@ export async function startApp() {
    * aynı bloğun içindeyken bir koltuğa tıklanırsa o koltuğun gözüne inilir.
    */
   function handlePick(seat) {
+    if (seat.style === 'standing') return viewStanding(seat);
     const block = blockOf(seat);
     if (state.view === 'overview' && state.block && state.block.id === block.id) selectSeat(seat);
     else selectBlock(block.id, { hint: true });
@@ -282,14 +304,48 @@ export async function startApp() {
     ui.setRow(state.block, rowIndex);
   }
 
+  // Ayakta alan: yer ayrılmaz; kullanıcı bölge ve boy seçer (göz yüksekliği = boy − 0,1 m).
+  let standH = 1.7;
+  const standPoints = () => picker.list.filter((s) => s.style === 'standing');
+  function nearestStanding(x, z) {
+    let best = null, bd = Infinity;
+    for (const s of standPoints()) {
+      const d = (s.pos[0] - x) ** 2 + (s.pos[2] - z) ** 2;
+      if (d < bd) { bd = d; best = s; }
+    }
+    return best;
+  }
+  function viewStanding(seat) {
+    if (!seat) return;
+    seat.eye[1] = seat.pos[1] + standH - 0.1;
+    selectSeat(seat);
+  }
+  /** ix: −1 sol / 0 orta / 1 sağ · iz: 0 ön / 1 orta / 2 arka */
+  function standZone(ix, iz) {
+    const pts = standPoints();
+    if (!pts.length) return;
+    const zs = pts.map((p) => p.pos[2]);
+    const zMin = Math.min(...zs), zMax = Math.max(...zs);
+    const xs = pts.map((p) => Math.abs(p.pos[0]));
+    const xMax = Math.max(...xs);
+    viewStanding(nearestStanding(ix * xMax * 0.6, zMin + ((zMax - zMin) * (iz + 0.5)) / 3));
+  }
+  const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const _hit = new THREE.Vector3();
+
   function statsFor(seat) {
     const focus = cfgOf().focus;
     const dx = focus[0] - seat.pos[0], dy = focus[1] - seat.pos[1], dz = focus[2] - seat.pos[2];
     const hd = Math.hypot(dx, dz) || 1;
     const dot = (seat.facing[0] * dx + seat.facing[1] * dz) / hd;
+    const distance = Math.hypot(dx, dy, dz);
+    const standing = seat.style === 'standing';
+    const lateral = Math.abs(seat.pos[0]) < 4 ? 'orta' : seat.pos[0] < 0 ? 'sol' : 'sağ';
     return {
+      title: standing ? `${seat.category === 'ayakta-gc' ? 'Golden Circle' : 'Ayakta'} · ${cfgOf().focusLabel} ${Math.round(distance)} m` : undefined,
+      sub: standing ? `${lateral[0].toUpperCase()}${lateral.slice(1)} bölge · boy ${standH.toFixed(2).replace('.', ',')} m` : undefined,
       focusLabel: cfgOf().focusLabel,
-      distance: Math.hypot(dx, dy, dz),
+      distance,
       height: seat.pos[1],
       side: (seat.blockId ? blockOf(seat) : state.block)?.group ?? '',
       angle: (Math.acos(Math.min(1, Math.max(-1, dot))) * 180) / Math.PI,
@@ -319,7 +375,7 @@ export async function startApp() {
     refreshColors();
     if (!fly) return;
     setOwnSeat(seat);
-    ui.setHud(seat, block, true, cfgOf().focusDative);
+    ui.setHud(seat, block, true, cfgOf().focusDative, statsFor(seat));
     markers.setBeamAllowed(false);
     let lookDir = null;
     if (keepLook) {
@@ -418,26 +474,24 @@ export async function startApp() {
     if (!document.fullscreenElement && state.immersive) setImmersive(false);
   });
 
-  function cycleQuality() {
-    const i = QUALITY_ORDER.indexOf(pref);
-    const next = QUALITY_ORDER[(i + 1) % QUALITY_ORDER.length];
+  function setQualityPref(next) {
+    if (next === pref) return;
     try {
-      localStorage.setItem('arena.quality', next);
+      if (next === 'auto') localStorage.removeItem('arena.quality');
+      else localStorage.setItem('arena.quality', next);
     } catch {
       ui.toast('Bu ortamda kalite ayarı kaydedilemiyor');
       return;
     }
     const u = new URL(location.href);
-    if (u.searchParams.has('q')) {
-      u.searchParams.delete('q');
-      location.href = u.toString();
-    } else {
-      location.reload();
-    }
+    u.searchParams.delete('q');
+    if (u.toString() !== location.href) location.href = u.toString();
+    else location.reload();
   }
 
   function setTint(on) {
     state.tint = on;
+    ui.setTint(on);
     refreshColors();
   }
 
@@ -460,6 +514,10 @@ export async function startApp() {
     }
     const hit = picker.pickBlock(r);
     if (!hit) return;
+    if (hit.block.style === 'standing') {
+      // ayakta alan: dokunulan zemin noktası doğrudan görüş noktası olur
+      if (r.intersectPlane(floorPlane, _hit)) return viewStanding(nearestStanding(_hit.x, _hit.z));
+    }
     if (state.block && hit.block.id === state.block.id) return ui.toast('Bir koltuğa dokun ya da listeden seç', 1800);
     selectBlock(hit.block.id, { hint: true });
   }
@@ -556,6 +614,7 @@ export async function startApp() {
     t += dt;
     rig.update(dt);
     if (venue.update(t, camera.position)) invalidateShadows();
+    venue.state.dim = state.view === 'seat' ? 0.22 : state.block ? 0.5 : 1;
     venue.seatVis.update(camera.position);
     markers.update(t);
     if (mouse.dirty && rig.mode === 'orbit' && !mouse.down) {
@@ -564,7 +623,7 @@ export async function startApp() {
       const seat = state.block ? picker.pickSeatInBlock(r, state.block) : null;
       const hit = seat ? null : picker.pickBlock(r);
       markers.setHover(seat && seat !== state.seat ? seat : null);
-      ui.tip(seat ? seatText(seat) : hit ? `${blockLabel(hit.block)} · dokun: blok görünümü` : null, mouse.x, mouse.y);
+      ui.tip(seat ? seatText(seat) : hit ? (hit.block.style === 'standing' ? 'Buradan göster' : `${blockLabel(hit.block)} · dokun`) : null, mouse.x, mouse.y);
       canvas.style.cursor = seat || hit ? 'pointer' : '';
     }
     if (composer) composer.render();

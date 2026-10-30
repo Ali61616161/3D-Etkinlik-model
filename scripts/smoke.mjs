@@ -86,14 +86,15 @@ if ((await page.evaluate(() => window.__arena.state.view)) !== 'overview') probl
 
 // hızlı seçim düğmesi + blok çubuğu + sinema modu
 await page.evaluate(() => window.__arena.applyConfig('concert', { fly: false }));
-await page.click('#quick button[data-block="L12"]');
+await page.evaluate(() => document.querySelector('#quick button[data-block="L12"]').click());
 await land();
 if ((await page.evaluate(() => window.__arena.state.block?.id)) !== 'L12') problems.push('hızlı seçim L12 çalışmadı');
 if (await page.evaluate(() => document.getElementById('blockBar').hidden)) problems.push('blok çubuğu görünmüyor');
-await page.click('#bbGo');
+await page.evaluate(() => document.getElementById('bbGo').click());
 await land();
 if ((await page.evaluate(() => window.__arena.state.view)) !== 'seat') problems.push('"Buradan göster" koltuk görünümüne geçmedi');
 await page.evaluate(() => window.__arena.exitSeat(false));
+await page.click('#btnMenu');
 await page.click('#btnFs');
 if (!(await page.evaluate(() => document.body.classList.contains('immersive')))) problems.push('sinema modu açılmadı');
 await page.click('#btnImm');
@@ -107,9 +108,20 @@ const lim = await page.evaluate(() => {
 for (const p of lim) if (Math.abs(p[0]) > 23 || p[1] < 0 || p[1] > 16 || p[2] < -29 || p[2] > 30) problems.push(`kamera sınır dışında: ${p.map((v) => v.toFixed(1))}`);
 
 // kategori boyası / bilgi penceresi
+await page.click('#btnMenu');
 await page.click('#btnTint');
 await page.click('#btnAbout');
 await page.keyboard.press('Escape');
+// kalite listesi: seçenekler görünür ve tek tıkla seçilir (yeniden yükleme yapmadan yalnızca varlığı kontrol)
+await page.click('#btnMenu');
+if ((await page.locator('#qList button').count()) !== 4) problems.push('kalite listesi 4 seçenek içermiyor');
+await page.keyboard.press('Escape');
+
+// ayakta bölge seçimi
+await page.evaluate(() => window.__arena.applyConfig('standing', { fly: false }));
+await page.evaluate(() => document.querySelector('#quick button[data-stand="0,0"]').click());
+await land();
+if ((await page.evaluate(() => window.__arena.state.seat?.style)) !== 'standing') problems.push('ayakta bölge seçimi çalışmadı');
 
 console.log(`${checked} koltuk görünümü denendi; sorun sayısı: ${problems.length}`);
 for (const p of problems.slice(0, 40)) console.log(' -', p);

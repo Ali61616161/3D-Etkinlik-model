@@ -261,10 +261,10 @@ export function buildStage(ctx) {
       map: fade,
       color: new THREE.Color().setHSL(i / NB, 0.9, 0.55),
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.12,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide, // kamera huzmenin içindeyken ekranı boyamasın
       toneMapped: false,
     });
     const cone = new THREE.Mesh(coneGeo, m);
@@ -301,6 +301,9 @@ export function buildStage(ctx) {
       bm.pool.scale.setScalar(len * 0.26);
       bm.m.color.setHSL(((t * 0.05 + bm.phase / 7) % 1 + 1) % 1, 0.9, 0.55);
       bm.poolMat.color.copy(bm.m.color);
+      const dim = state.dim ?? 1;
+      bm.m.opacity = 0.12 * dim;
+      bm.poolMat.opacity = 0.32 * dim;
     }
     if (t - last < 0.07) return;
     last = t;

@@ -109,7 +109,7 @@ export function buildEffects(ctx) {
       g.mesh.position.y = gy;
       g.mesh.rotation.y = t * 0.35 + g.phase;
       g.m.color.setHSL(((t * 0.05 + g.phase / 6) % 1 + 1) % 1, 0.9, 0.5);
-      g.m.opacity = 0.35 + 0.25 * Math.sin(t * 1.3 + g.phase);
+      g.m.opacity = (0.28 + 0.2 * Math.sin(t * 1.3 + g.phase)) * (state.dim ?? 1);
     }
     // lazerler: 12 sn döngüde 8 sn açık; yelpaze süpürme
     const on = laserIds.includes(state.config) && t % 12 < 8;
@@ -117,7 +117,7 @@ export function buildEffects(ctx) {
       l.yaw.visible = on;
       l.yaw.rotation.y = Math.sin(t * 0.7 + l.phase) * 0.9;
       l.pitch.rotation.x = -1.65 + Math.sin(t * 1.1 + l.phase) * 0.28;
-      l.m.opacity = 0.55 + 0.35 * Math.sin(t * 9 + l.phase);
+      l.m.opacity = (0.5 + 0.3 * Math.sin(t * 9 + l.phase)) * Math.max(0.35, state.dim ?? 1);
     }
   });
 }
