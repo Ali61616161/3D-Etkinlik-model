@@ -52,6 +52,14 @@ export function buildLocas(ctx) {
     box(b, 'sofa', W - 1.0, 0.55, 0.18, 0, D - 0.45, fy + 0.75);
     box(b, 'black', 1.7, 1.0, 0.55, -W / 2 + 1.1, D - 0.4, fy + 0.5);
     box(b, 'maple', 1.76, 0.04, 0.6, -W / 2 + 1.1, D - 0.4, fy + 1.02);
+    // Küçük masa + tabureler, mini buzdolabı, tavan spotları
+    box(b, 'maple', 0.95, 0.04, 0.6, -0.9, D - 2.15, fy + 0.74);
+    box(b, 'steel', 0.06, 0.72, 0.06, -0.9, D - 2.15, fy + 0.37);
+    box(b, 'steel', 0.45, 0.03, 0.4, -0.9, D - 2.15, fy + 0.02);
+    for (const dz of [-0.55, 0.55]) box(b, 'leather', 0.32, 0.5, 0.32, -0.9, D - 2.15 + dz, fy + 0.27);
+    box(b, 'steelLight', 0.62, 0.9, 0.58, W / 2 - 0.5, D - 0.36, fy + 0.46);
+    box(b, 'black', 0.02, 0.5, 0.5, W / 2 - 0.5, D - 0.65, fy + 0.5);
+    for (const lat of [-1.6, -0.5, 0.6, 1.7]) box(shellB, 'lampWarm', 0.18, 0.02, 0.18, lat, 3.4, ring.ceilingY - 0.41);
     // Sıcak tavan şeridi
     box(shellB, 'lampWarm', W - 1.2, 0.04, 0.3, 0, 3.0, ring.ceilingY - 0.42);
     box(shellB, 'lampWarm', W - 1.2, 0.04, 0.3, 0, 1.4, ring.ceilingY - 0.42);

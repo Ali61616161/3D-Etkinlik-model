@@ -13,16 +13,39 @@ const lerp = (a, b, t) => a + (b - a) * t;
 export function ringLayout(config) {
   const r = config.hall.ring;
   const F = r.frontX;
-  const xe = F - (r.endFrontZ - r.chamferStartZ); // 45° pahın bittiği |x|
+  const xe = F - (r.endFrontZ - r.chamferStartZ); // köşe yayının bittiği |x|
+  const N = r.cornerSegments ?? 1;
+
+  // Köşe: (F, zc) → (xe, zE) arası, F hattına teğet başlayıp uç hattına teğet biten ikinci derece Bezier
+  const corner = (sx) => {
+    const pts = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const a = [sx * F, r.chamferStartZ];
+      const c = [sx * F, r.endFrontZ];
+      const b = [sx * xe, r.endFrontZ];
+      const k = 1 - t;
+      pts.push([k * k * a[0] + 2 * k * t * c[0] + t * t * b[0], k * k * a[1] + 2 * k * t * c[1] + t * t * b[1]]);
+    }
+    return pts;
+  };
+  const left = corner(-1); // sol-arka: yan hattan uç hattına
+  const right = corner(1).reverse(); // uç hattından sağ yan hatta
   // Soldan başlayıp saat yönünde dolaşan ön hat (x,z)
-  const path = [
-    [-F, r.stageWallZ],
-    [-F, r.chamferStartZ],
-    [-xe, r.endFrontZ],
-    [xe, r.endFrontZ],
-    [F, r.chamferStartZ],
-    [F, r.stageWallZ],
-  ];
+  const path = [[-F, r.stageWallZ], ...left, ...right, [F, r.stageWallZ]];
+
+  const tangentNormal = (pts, t) => {
+    // t ∈ [0,1] noktasındaki konum ve bowl içine bakan birim yön
+    const i = Math.min(pts.length - 2, Math.floor(t * (pts.length - 1)));
+    const a = pts[i], b = pts[i + 1];
+    const f = t * (pts.length - 1) - i;
+    const dx = b[0] - a[0], dz = b[1] - a[1];
+    const l = Math.hypot(dx, dz);
+    let n = [-dz / l, dx / l];
+    const px = a[0] + dx * f, pz = a[1] + dz * f;
+    if (n[0] * (0 - px) + n[1] * (5 - pz) < 0) n = [-n[0], -n[1]];
+    return { pos: [px, pz], n };
+  };
 
   const locas = [];
   const w = r.locaWidth;
@@ -31,16 +54,17 @@ export function ringLayout(config) {
   for (let i = 0; i < r.sideLocas; i++) {
     locas.push({ n: 1 + i, front: [-F, -sideHalf + w / 2 + i * w], facing: [1, 0] });
   }
-  // 9: sol köşe (pah ortası)
-  const m1 = [(-F - xe) / 2, (r.chamferStartZ + r.endFrontZ) / 2];
-  locas.push({ n: 9, front: m1, facing: norm([1, -1]) });
+  // 9: sol köşe (yayın ortası)
+  const m1 = tangentNormal(left, 0.5);
+  locas.push({ n: 9, front: m1.pos, facing: m1.n });
   // 10–15: karşı uç, soldan sağa
   const endHalf = (r.endLocas * w) / 2;
   for (let i = 0; i < r.endLocas; i++) {
     locas.push({ n: 10 + i, front: [-endHalf + w / 2 + i * w, r.endFrontZ], facing: [0, -1] });
   }
   // 16: sağ köşe
-  locas.push({ n: 16, front: [(F + xe) / 2, m1[1]], facing: norm([-1, -1]) });
+  const m2 = tangentNormal(right, 0.5);
+  locas.push({ n: 16, front: m2.pos, facing: m2.n });
   // 17–24: sağ hat, karşı uçtan sahneye
   for (let i = 0; i < r.sideLocas; i++) {
     locas.push({ n: 17 + i, front: [F, sideHalf - w / 2 - i * w], facing: [-1, 0] });

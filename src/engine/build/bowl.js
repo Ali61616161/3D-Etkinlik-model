@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Batch } from '../batch.js';
 import { labelMesh } from './labels.js';
 
@@ -16,6 +17,7 @@ export function buildBowl(ctx) {
   const { config, mats, groups } = ctx;
   const batches = { shared: new Batch(), concert: new Batch(), basketball: new Batch() };
   const plaques = { shared: [], concert: [], basketball: [] };
+  const fences = { shared: [], concert: [], basketball: [] };
   const keyOf = (t) => (t.configs.length > 1 ? 'shared' : t.configs[0]);
   const pitchSeat = config.dims.seatPitch;
 
@@ -41,11 +43,16 @@ export function buildBowl(ctx) {
       b.box('tread', w, top, rowPitch + 0.004, cx, top / 2, cz, ry);
     }
 
-    // Ön cam bariyer + küpeşte
+    // Ön bariyer: siyah metal çit (referans fotoğraflardaki gibi) + üst küpeşte
     {
       const [cx, cz] = at(cL, -rowPitch / 2 + 0.02);
-      b.box('glass', w, 0.95, 0.03, cx, baseY + 0.475, cz, ry);
-      b.box('steelLight', w, 0.05, 0.07, cx, baseY + 0.97, cz, ry);
+      const g = new THREE.PlaneGeometry(w, 0.95);
+      const uv = g.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * w);
+      g.rotateY(ry);
+      g.translate(cx, baseY + 0.475, cz);
+      fences[keyOf(t)].push(g);
+      b.box('black', w, 0.05, 0.07, cx, baseY + 0.96, cz, ry);
     }
 
     // Koridorlar (bloklar arası boşluk): basamak burunları + küpeşteler
@@ -83,7 +90,7 @@ export function buildBowl(ctx) {
           const [x0, z0] = at(lat, 0);
           const [x1, z1] = at(lat, (rows - 1) * rowPitch);
           const y1 = baseY + (rows - 1) * rise;
-          b.bar('steelLight', [x0, baseY + 0.95, z0], [x1, y1 + 0.95, z1], 0.045);
+          b.bar('black', [x0, baseY + 0.95, z0], [x1, y1 + 0.95, z1], 0.05);
           b.bar('steel', [x0, baseY, z0], [x0, baseY + 0.95, z0], 0.04);
           b.bar('steel', [x1, y1, z1], [x1, y1 + 0.95, z1], 0.04);
         }
@@ -124,5 +131,10 @@ export function buildBowl(ctx) {
     g.name = `bowl:${key}`;
     groups[key].add(g);
     if (plaques[key].length) groups[key].add(labelMesh(plaques[key], { cols: 8 }));
+    if (fences[key].length) {
+      const m = new THREE.Mesh(mergeGeometries(fences[key], false), mats.fence);
+      m.name = `fence:${key}`;
+      groups[key].add(m);
+    }
   }
 }

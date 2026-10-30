@@ -1,3 +1,7 @@
+const esc = (v) =>
+  String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const safeColor = (c) => (/^#[0-9a-fA-F]{3,8}$/.test(c) ? c : '#4cc2ff');
+
 /** DOM bağları: seçiciler, bilgi kartı, HUD, açıklama penceresi. İş mantığı app.js'te. */
 export function createUI({ config, model, handlers }) {
   const $ = (id) => document.getElementById(id);
@@ -68,11 +72,11 @@ export function createUI({ config, model, handlers }) {
   // Bilgi penceresi
   const meta = config.meta;
   $('aboutBody').innerHTML = `
-    <p>${meta.name} — ${meta.location} · İşletmeci: ${meta.operator}</p>
+    <p>${esc(meta.name)} — ${esc(meta.location)} · İşletmeci: ${esc(meta.operator)}</p>
     <h3>Kaynaklar</h3>
-    <ul>${meta.sources.map((s) => `<li><b>${s.label}</b> — ${s.use}</li>`).join('')}</ul>
+    <ul>${meta.sources.map((s) => `<li><b>${esc(s.label)}</b> — ${esc(s.use)}</li>`).join('')}</ul>
     <h3>Tahmin / varsayımlar</h3>
-    <ul>${meta.assumptions.map((s) => `<li>${s}</li>`).join('')}</ul>
+    <ul>${meta.assumptions.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>
     <h3>Bu görünüm</h3>
     <ul><li>Tüm model kodla, parametrik olarak üretilir; ölçüler <code>src/venue/volkswagen-arena.config.js</code> dosyasından okunur.</li>
     <li>Resmî plan ve teknik doküman geldiğinde yalnızca bu config güncellenir.</li></ul>`;
@@ -119,7 +123,7 @@ export function createUI({ config, model, handlers }) {
       });
       const cats = new Set(blocks.map((b) => b.category));
       el.legend.innerHTML = [...cats]
-        .map((k) => `<span><i style="background:${config.categories[k].color}"></i>${config.categories[k].label}</span>`)
+        .map((k) => `<span><i style="background:${safeColor(config.categories[k].color)}"></i>${esc(config.categories[k].label)}</span>`)
         .join('');
       el.mapHint.textContent = key === 'concert' ? '· sahne üstte' : '· saha ortada';
       el.infoCard.hidden = true;
@@ -164,13 +168,13 @@ export function createUI({ config, model, handlers }) {
       el.infoCard.hidden = false;
       const blockName = block.id.startsWith('L') ? `Loca ${block.locaNo}` : block.id.startsWith('VIP') ? block.name : `Blok ${block.id}`;
       el.infoTitle.textContent = `${blockName} · Sıra ${seat.rowLabel} · Koltuk ${seat.seatNo}`;
-      el.infoDot.style.background = config.categories[seat.category]?.color ?? '#4cc2ff';
+      el.infoDot.style.background = safeColor(config.categories[seat.category]?.color);
       el.infoCat.textContent = catLabel(seat.category);
       el.infoStats.innerHTML = `
-        <div><dt>${stats.focusLabel} mesafesi</dt><dd>${fmt(stats.distance, 0)} m</dd></div>
+        <div><dt>${esc(stats.focusLabel)} mesafesi</dt><dd>${fmt(stats.distance, 0)} m</dd></div>
         <div><dt>Zeminden yükseklik</dt><dd>${fmt(stats.height)} m</dd></div>
-        <div><dt>Konum</dt><dd>${stats.side}</dd></div>
-        <div><dt>Bakış açısı</dt><dd>${fmt(stats.angle, 0)}°</dd></div>`;
+        <div><dt>Konum</dt><dd>${esc(stats.side)}</dd></div>
+        <div><dt>Başı çevirme</dt><dd>${fmt(stats.angle, 0)}°</dd></div>`;
       quiet(() => {
         el.selBlock.value = block.id;
       });

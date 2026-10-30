@@ -22,14 +22,10 @@ export function buildShell(ctx) {
   const ribbons = [];
 
   const wingEndZ = ring.wingZ;
-  const segs = [
-    // [a, b] sahne ucundaki kanat duvarı ayrı ele alınır
-    [[-ring.frontX, wingEndZ], path[1]],
-    [path[1], path[2]],
-    [path[2], path[3]],
-    [path[3], path[4]],
-    [path[4], [ring.frontX, wingEndZ]],
-  ];
+  // ön hat noktaları: sahne ucundaki kanat başlangıcından, yuvarlak köşeler üzerinden, karşı kanada
+  const pts = [[-ring.frontX, wingEndZ], ...path.slice(1, -1), [ring.frontX, wingEndZ]];
+  const segs = [];
+  for (let i = 0; i < pts.length - 1; i++) segs.push([pts[i], pts[i + 1]]);
 
   for (const [a, b] of segs) {
     const dx = b[0] - a[0], dz = b[1] - a[1];

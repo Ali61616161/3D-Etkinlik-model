@@ -75,10 +75,10 @@ export function buildDetails(ctx) {
     const R = (roof.halfSpan ** 2 + sag ** 2) / (2 * sag);
     return roof.apexY - R + Math.sqrt(R * R - x * x);
   };
-  duct(-12.5, archY(12.5) - 2.8, 0.5);
-  duct(12.5, archY(12.5) - 2.8, 0.5);
-  duct(-22, archY(22) - 2.6, 0.38);
-  duct(22, archY(22) - 2.6, 0.38);
+  duct(-12.5, archY(12.5) - 2.8, 0.38);
+  duct(12.5, archY(12.5) - 2.8, 0.38);
+  duct(-22, archY(22) - 2.6, 0.3);
+  duct(22, archY(22) - 2.6, 0.3);
   // Kablo taşıyıcılar
   for (const x of [-5.5, 5.5]) {
     structure.box('steel', 0.5, 0.06, zB - zA, x, archY(x) - 2.3, (zA + zB) / 2);

@@ -13,10 +13,12 @@ npm run dev            # http://localhost:5173
 npm run build          # dist/  (siteye gömmek için)
 npm run build:single   # dist-single/index.html → tek dosya, çift tıkla açılır (demo / video çekimi)
 npm run stats          # koltuk sayıları + resmî rakamlarla karşılaştırma
+npm test               # 9 birim testi (koltuk modeli, plan aralıkları, çakışma, seçici)
+npm run smoke          # tarayıcı duman testi (Playwright; her bloğun koltuk görünümü)
 ```
 
 Grafik kalitesi: üstteki **Kalite** düğmesi ya da `?q=high|medium|low` (varsayılan: masaüstü Yüksek, telefon Düşük).
-Yüksek = bloom + 4096 gölge haritası, Düşük = gölgesiz / bloomsuz.
+Yüksek = bloom + vinyet + 4096 gölge haritası + yumuşatılmış koltuklar, Orta = gölge + MSAA, Düşük = gölgesiz, basit koltuk.
 
 ## Kullanım
 
@@ -43,5 +45,6 @@ src/ui/                                panel, plan (minimap), HUD
 docs/                                  doğrulama notları, yeni mekân ekleme
 ```
 
+Güvenlik notları → [docs/guvenlik.md](docs/guvenlik.md).
 Başka bir mekân için yeni bir config yazmak yeterlidir → [docs/yeni-mekan.md](docs/yeni-mekan.md).
 Veri kaynakları, doğrulanan/tahmin edilen kalemler → [docs/dogrulama.md](docs/dogrulama.md).

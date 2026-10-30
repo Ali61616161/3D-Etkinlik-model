@@ -72,8 +72,14 @@ export function buildStage(ctx) {
   for (const r of rows) {
     for (let i = 0; i < 14; i++) {
       const x = -towerX + 1 + (i * (2 * towerX - 2)) / 13;
-      b.box('black', 0.42, 0.55, 0.42, x, r.y - 0.55, r.z);
-      lampBatches[li % 4].box('lamp' + (li % 4), 0.3, 0.06, 0.3, x, r.y - 0.84, r.z);
+      // hareketli kafa: taban + çatal (yoke) + silindirik kafa + renkli mercek
+      b.box('black', 0.34, 0.1, 0.34, x, r.y - 0.32, r.z);
+      b.box('black', 0.045, 0.42, 0.08, x - 0.17, r.y - 0.55, r.z);
+      b.box('black', 0.045, 0.42, 0.08, x + 0.17, r.y - 0.55, r.z);
+      const hg = new THREE.CylinderGeometry(0.13, 0.17, 0.4, 14);
+      b.geometry('black', hg, x, r.y - 0.66, r.z);
+      hg.dispose();
+      lampBatches[li % 4].box('lamp' + (li % 4), 0.25, 0.03, 0.25, x, r.y - 0.87, r.z);
       li++;
     }
   }
@@ -121,6 +127,81 @@ export function buildStage(ctx) {
   // Mikrofon/monitör kamaları
   for (let i = -3; i <= 3; i++) {
     b.box('black', 0.9, 0.38, 0.55, i * 2.0 + 0.5, st.height + 0.19, st.z0 + st.depth - 1.2, 0.0, 0, 0);
+  }
+
+  // Backline: davul podyumu + davul seti, amfi kuleleri, monitör kamaları, mikrofon sehpaları
+  const zb = st.z0 + 3.4;
+  const yS = st.height;
+  b.box('black', 3.2, 0.35, 2.8, 0, yS + 0.175, zb);
+  const drum = (r, h, x, y, z, rx = 0, rz = 0) => {
+    const g = new THREE.CylinderGeometry(r, r, h, 22);
+    if (rx) g.rotateX(rx);
+    if (rz) g.rotateZ(rz);
+    b.geometry('steelLight', g, x, y, z);
+    g.dispose();
+  };
+  const dy = yS + 0.35;
+  drum(0.34, 0.42, 0, dy + 0.36, zb + 0.3, Math.PI / 2); // kick
+  drum(0.2, 0.2, -0.4, dy + 0.88, zb + 0.05); // tom
+  drum(0.22, 0.22, 0.4, dy + 0.88, zb + 0.05);
+  drum(0.27, 0.35, 0.95, dy + 0.5, zb + 0.35); // floor tom
+  drum(0.2, 0.15, -0.75, dy + 0.62, zb + 0.55); // snare
+  for (const [x, y, z] of [[-1.15, 1.2, zb - 0.1], [0.05, 1.3, zb - 0.45], [1.25, 1.2, zb - 0.1], [-1.0, 0.85, zb + 0.5]]) {
+    const g = new THREE.CylinderGeometry(0.27, 0.27, 0.012, 24);
+    b.geometry('yellow', g, x, dy + y, z);
+    g.dispose();
+    b.bar('steel', [x, dy, z], [x, dy + y, z], 0.02);
+  }
+  for (const s of [-1, 1]) {
+    for (let k = 0; k < 3; k++) b.box('black', 0.7, 0.6, 0.4, s * 5.2, yS + 0.3 + k * 0.62, st.z0 + 2.4);
+    b.box('black', 1.1, 0.5, 0.5, s * 3.0, yS + 0.25, st.z0 + 4.0);
+  }
+  for (let i = -3; i <= 3; i++) {
+    b.box('black', 0.9, 0.26, 0.5, i * 2.0 + 0.5, yS + 0.13, st.z0 + st.depth - 1.1, 0, -0.35); // monitör kaması
+  }
+  for (const x of [-3.2, 0, 3.2]) {
+    const zm = st.z0 + st.depth - 2.4;
+    b.bar('steel', [x, yS, zm], [x, yS + 1.5, zm], 0.025);
+    b.bar('black', [x, yS + 1.5, zm], [x, yS + 1.52, zm + 0.3], 0.03);
+    b.box('black', 0.05, 0.12, 0.05, x, yS + 1.52, zm + 0.34);
+  }
+  // Sahne önü LED şerit + yan merdivenler
+  b.box('lampWarm', st.width, 0.05, 0.06, 0, st.height - 0.1, st.z0 + st.depth + 0.04);
+  for (const sx of [-1, 1]) {
+    for (let k = 0; k < 3; k++) {
+      const hgt = (st.height * (3 - k)) / 4;
+      b.box('black', 1.1, hgt, 0.5, sx * (st.width / 2 + 0.6), hgt / 2, st.z0 + st.depth - 1.8 + k * 0.5);
+    }
+  }
+
+  // Arka perde: kıvrımlı siyah drape
+  {
+    const cg = new THREE.PlaneGeometry(34, 12, 90, 1);
+    const pos = cg.attributes.position;
+    for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i) * 2.6) * 0.14);
+    cg.computeVertexNormals();
+    const curtain = new THREE.Mesh(cg, new THREE.MeshStandardMaterial({ color: 0x08080a, roughness: 1, side: THREE.DoubleSide }));
+    curtain.position.set(0, 7.2, config.hall.ring.stageWallZ + 0.4);
+    root.add(curtain);
+  }
+
+  // Salon üstü truss ızgarası (konsere göre): kalabalık alanı üstünde iki uzun + üç enine kiriş, hareketli kafalar
+  {
+    const gy = 15.2;
+    for (const x of [-9, 9]) truss(b, [x, gy, -16], [x, gy, 12], 0.45);
+    for (const z of [-14, -3, 8]) truss(b, [-9, gy, z], [9, gy, z], 0.45);
+    for (const x of [-9, 9]) for (const z of [-14, -3, 8, 12]) b.bar('steel', [x, gy + 0.2, z], [x, 19.2 + Math.abs(x) * 0.0, z], 0.03);
+    let gi = 0;
+    for (const x of [-9, 9]) {
+      for (let z = -15; z <= 11; z += 2.2) {
+        b.box('black', 0.3, 0.1, 0.3, x, gy - 0.28, z);
+        const hg = new THREE.CylinderGeometry(0.11, 0.15, 0.34, 12);
+        b.geometry('black', hg, x, gy - 0.56, z);
+        hg.dispose();
+        lampBatches[gi % 4].box('lamp' + (gi % 4), 0.22, 0.03, 0.22, x, gy - 0.75, z);
+        gi++;
+      }
+    }
   }
 
   // Fotoğraf çukuru bariyeri (sahne önünden 1,2 m)

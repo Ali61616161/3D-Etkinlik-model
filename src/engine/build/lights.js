@@ -48,8 +48,8 @@ export function buildLights(ctx) {
   scene.add(...wash);
 
   const presets = {
-    game: { hemi: 0.9, sun: 1.0, game: 1500, wash: 0, bg: 0x0a0b0e },
-    concert: { hemi: 0.42, sun: 0.22, game: 0, wash: 480, bg: 0x050608 },
+    game: { hemi: 0.9, sun: 1.0, game: 1500, wash: 0, bg: 0x0a0b0e, fog: [0x0c0d11, 0.0032] },
+    concert: { hemi: 0.42, sun: 0.22, game: 0, wash: 480, bg: 0x050608, fog: [0x0d0818, 0.0105] },
   };
 
   hooks.onConfig.push((key, config) => {
@@ -59,6 +59,7 @@ export function buildLights(ctx) {
     gameLights.forEach((l) => (l.intensity = p.game));
     wash.forEach((l) => (l.intensity = p.wash));
     scene.background = new THREE.Color(p.bg);
+    scene.fog = new THREE.FogExp2(p.fog[0], p.fog[1]);
   });
 
   anim.push((t) => {

@@ -16,6 +16,18 @@ olduğu için okunamadı; Pozitif'ten alınınca ölçüler tek dosyada (`volksw
 | Çatı | Çelik, 286 t yük kapasitesi; tribünler betonarme | Arkiv / Yazgan Design |
 | Malzeme/renk | Açık beton, siyah, açık akçaağaç; yönlendirme yazıları siyah/RAL 1028 sarı | Yazgan Design |
 
+## Referans fotoğraflardan çıkarılanlar (2. tur)
+
+Pozitif/vwarena.com galeri fotoğrafları ve Eurohoops (2015) görselleri, yalnızca karşılaştırma için incelendi (projeye konmadı):
+
+* Salon kabuğu **yuvarlak köşeli bir kâse**; tribün önlerinde **siyah metal çit**, aralarda siyah merdiven korkulukları → model köşelerde Bezier yayına çevrildi, ön bariyer cam yerine çit dokusu.
+* Basketbolda yan tribünler sahanın kenarından başlıyor (geri çekilebilir ek tribün) → `S1–S8` blokları eklendi (tahmini).
+* Pota sehpası: yeşil gövde, **sarı-siyah uyarı bantlı dolgu**, üstte şut saati; saha çevresinde açılı **LED reklam panoları**; yedek kulübelerinde yeşil mat → modele eklendi.
+* Asma LED **küp**, altında yuvarlak ışık diski; maç günü skor/süre akıyor.
+* Konser zemini **sıcak, parlak cilalı beton**; sahnede devasa LED duvarlar, hareketli kafalı truss ızgaraları, mavi/mor huzmeler, gobo desenleri → zemin malzemesi, truss ızgarası, gobo/lazer efektleri eklendi.
+* Koltuk: yüksek, kıvrımlı siyah sırtlık, kalın kolçak, **katlanır oturak** (boş salonda yukarıda) → tribünlerde katlı, zemin/loca/VIP'te açık model.
+* vwarena.com galeri başlıkları yalnızca etkinlik afişleri (Blue, Yalın, Ebru Gündeş …); mimari bilgi içermiyor.
+
 ## Çelişkiler
 
 * Kapasite: 4.500–5.800 (Vikipedi), 5.800 (Uniq/Time Out), **6.500** (vwarena.com *Main Hall Renting*, ayakta+tribün).

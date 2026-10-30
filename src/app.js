@@ -4,6 +4,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 import config from './venue/volkswagen-arena.config.js';
 import { buildSeatModel, blocksForConfig } from './engine/layout.js';
@@ -16,8 +17,8 @@ import { Minimap } from './ui/minimap.js';
 
 const QUALITY = {
   high: { label: 'Yüksek', shadows: true, shadowMap: 4096, pixelRatio: 2, bloom: true, antialias: true, seatDetail: 'high' },
-  medium: { label: 'Orta', shadows: true, shadowMap: 2048, pixelRatio: 1.5, bloom: false, antialias: true, seatDetail: 'high' },
-  low: { label: 'Düşük', shadows: false, shadowMap: 1024, pixelRatio: 1, bloom: false, antialias: false, seatDetail: 'low' },
+  medium: { label: 'Orta', shadows: true, shadowMap: 2048, pixelRatio: 1.5, bloom: false, antialias: true, seatDetail: 'mid' },
+  low: { label: 'Düşük', shadows: false, shadowMap: 1024, pixelRatio: 1.25, bloom: false, antialias: true, seatDetail: 'low' },
 };
 const QUALITY_ORDER = ['auto', 'high', 'medium', 'low'];
 
@@ -33,6 +34,14 @@ function resolveQuality() {
   }
   return { pref, key, q: QUALITY[key] };
 }
+
+// Hafif vinyet: kenarları karartarak odağı merkeze toplar (yalnızca yüksek kalite)
+const VignetteShader = {
+  uniforms: { tDiffuse: { value: null }, strength: { value: 0.5 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader:
+    'uniform sampler2D tDiffuse; uniform float strength; varying vec2 vUv; void main(){ vec4 c = texture2D(tDiffuse, vUv); float v = smoothstep(0.9, 0.25, length(vUv - 0.5) * 1.2); c.rgb *= mix(1.0 - strength, 1.0, v); gl_FragColor = c; }',
+};
 
 const AUTO_ACCENT = new THREE.Color(0.1, 0.5, 0.95); // blok vurgusu: mavi (koltuk görünümünde hiç kullanılmaz)
 
@@ -88,7 +97,7 @@ export async function startApp() {
 
   const venue = createVenue({ config, model, quality, scene });
   const picker = new SeatPicker(model);
-  const ownMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.58, metalness: 0.06, color: venue.seatVis.styleColor('standard') });
+  const ownMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0.02, color: venue.seatVis.styleColor('standard') });
   const markers = new Markers(scene, venue.seatVis.geometry, ownMat);
   const rig = new CameraRig(camera, canvas);
   rig.overviewFov = overviewFovFor(camera.aspect);
@@ -115,6 +124,7 @@ export async function startApp() {
     composer.setPixelRatio(renderer.getPixelRatio());
     composer.addPass(new RenderPass(scene, camera));
     composer.addPass(new UnrealBloomPass(new THREE.Vector2(w, h), 0.32, 0.55, 0.9));
+    composer.addPass(new ShaderPass(VignetteShader));
     composer.addPass(new OutputPass());
   }
 
@@ -389,8 +399,8 @@ export async function startApp() {
   }
   requestAnimationFrame(frame);
 
-  // Test/demo için küçük dış API
-  window.__arena = {
+  // Test için küçük dış API: yalnızca ?debug ile (üretimde dışarı açılmaz)
+  if (new URLSearchParams(location.search).has('debug')) window.__arena = {
     model,
     config,
     state,

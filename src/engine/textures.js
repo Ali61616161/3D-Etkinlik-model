@@ -274,3 +274,119 @@ export function exitSignTexture() {
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
+
+/** Siyah metal bariyer: dikey çubuklar + üst/alt korkuluk (alfa testli, 1 m'de bir tekrar). */
+export function fenceTexture() {
+  const [c, ctx] = canvas(128, 128);
+  ctx.clearRect(0, 0, 128, 128);
+  ctx.fillStyle = '#d0d4da';
+  for (let i = 0; i < 8; i++) ctx.fillRect(i * 16 + 6, 6, 4, 116); // dikey çubuklar
+  ctx.fillRect(0, 2, 128, 9); // üst korkuluk
+  ctx.fillRect(0, 56, 128, 4); // orta korkuluk
+  ctx.fillRect(0, 117, 128, 8); // alt korkuluk
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  return t;
+}
+
+/** Sarı–siyah uyarı bandı (pota sehpası dolgusu). */
+export function hazardTexture() {
+  const [c, ctx] = canvas(128, 128);
+  ctx.fillStyle = '#f2c200';
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.fillStyle = '#101010';
+  for (let i = -2; i < 6; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * 32, 128);
+    ctx.lineTo(i * 32 + 16, 128);
+    ctx.lineTo(i * 32 + 16 + 128, 0);
+    ctx.lineTo(i * 32 + 128, 0);
+    ctx.closePath();
+    ctx.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Hareketli kafa gobo deseni: radyal çizgiler + noktalar (zemine yansıyan ışık deseni). */
+export function goboTexture() {
+  const [c, ctx] = canvas(512, 512);
+  ctx.clearRect(0, 0, 512, 512);
+  ctx.translate(256, 256);
+  const r = rng(5);
+  for (let i = 0; i < 18; i++) {
+    ctx.rotate((Math.PI * 2) / 18);
+    const g = ctx.createLinearGradient(0, 20, 0, 240);
+    g.addColorStop(0, 'rgba(255,255,255,0.0)');
+    g.addColorStop(0.35, `rgba(255,255,255,${0.5 + r() * 0.4})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(-5, 20);
+    ctx.lineTo(5, 20);
+    ctx.lineTo(18 + r() * 10, 240);
+    ctx.lineTo(-18 - r() * 10, 240);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const mask = ctx.createRadialGradient(256, 256, 20, 256, 256, 256);
+  mask.addColorStop(0, 'rgba(255,255,255,0.9)');
+  mask.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.fillStyle = mask;
+  ctx.fillRect(0, 0, 512, 512);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Yumuşak ışık huzmesi gradyanı (koni yüzeyi için, uçta sönen). */
+export function beamTexture() {
+  const [c, ctx] = canvas(8, 256);
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.6, 'rgba(255,255,255,0.35)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 8, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Yuvarlak yumuşak nokta (toz/pırıltı parçacıkları). */
+export function dotTexture() {
+  const [c, ctx] = canvas(64, 64);
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.4, 'rgba(255,255,255,0.35)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Sac parke dokusu: açık akçaağaç tahta damarı (loca zemini). */
+export function parquetTexture() {
+  const [c, ctx] = canvas(256, 256);
+  const r = rng(21);
+  ctx.fillStyle = '#d4ad7c';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 16; i++) {
+    ctx.fillStyle = `rgba(${110 + r() * 40},${70 + r() * 30},${30 + r() * 20},${0.1 + r() * 0.12})`;
+    ctx.fillRect(i * 16, 0, 15, 256);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(i * 16 + 15, 0, 1, 256);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}

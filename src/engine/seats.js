@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /**
  * Koltuk geometrileri (yerel +Z = baktığı yön, taban y=0).
@@ -54,21 +54,33 @@ const T = (x, y, z) => new THREE.Matrix4().makeTranslation(x, y, z);
 const RX = (a) => new THREE.Matrix4().makeRotationX(a);
 
 export function createSeatGeometry(kind = 'open', detail = 'high') {
-  const hi = detail === 'high';
+  const hi = detail !== 'low';
+  const ultra = hi; // yumuşatılmış normaller orta ve yüksek kalitede
+  const rich = detail === 'high';
+  const segs = 3;
   const parts = [];
   const tilt = -0.17; // sırtlık geriye eğimi
 
-  // Sırtlık (yüksek, hafif geriye eğimli) + başlık bandı
-  const back = hi ? roundedSlab(0.43, 0.64, 0.075, 0.07) : box(0.43, 0.64, 0.075);
+  // Yüksek kalitede: kenarları yumuşatılmış (crease) normaller, sırtlık plan görünüşte kıvrımlı
+  const soft = (g, bend = 0) => {
+    if (bend) {
+      const pos = g.attributes.position;
+      for (let i = 0; i < pos.count; i++) pos.setZ(i, pos.getZ(i) - bend * pos.getX(i) * pos.getX(i));
+    }
+    return ultra ? toCreasedNormals(g, 0.7) : g;
+  };
+
+  // Sırtlık (yüksek, hafif geriye eğimli, kıvrımlı) + başlık
+  const back = hi ? soft(roundedSlab(0.43, 0.64, 0.075, 0.075, segs), 0.9) : box(0.43, 0.64, 0.075);
   parts.push({ g: back, shade: 1.0, m: T(0, 0.8, -0.2).multiply(RX(tilt)) });
-  const head = box(0.34, 0.12, 0.085);
-  parts.push({ g: head, shade: 1.25, m: T(0, 1.07, -0.215).multiply(RX(tilt)) });
+  const head = rich ? soft(roundedSlab(0.34, 0.13, 0.09, 0.05, 2), 0.9) : box(0.34, 0.12, 0.085);
+  parts.push({ g: head, shade: 1.22, m: T(0, 1.075, -0.218).multiply(RX(tilt)) });
   // bel desteği: arkaya doğru koyu şerit
-  parts.push({ g: box(0.36, 0.14, 0.03), shade: 0.75, m: T(0, 0.6, -0.17).multiply(RX(tilt)) });
+  parts.push({ g: box(0.36, 0.14, 0.03), shade: 0.72, m: T(0, 0.6, -0.17).multiply(RX(tilt)) });
 
   // Oturak
   const cushionGeo = () => {
-    const c = hi ? roundedSlab(0.42, 0.44, 0.085, 0.06) : box(0.42, 0.44, 0.085);
+    const c = hi ? soft(roundedSlab(0.42, 0.44, 0.09, 0.07, segs)) : box(0.42, 0.44, 0.085);
     return c.rotateX(-Math.PI / 2); // kalınlık → Y
   };
   if (kind === 'folded') {
@@ -78,10 +90,11 @@ export function createSeatGeometry(kind = 'open', detail = 'high') {
     parts.push({ g: cushionGeo(), shade: 1.0, m: T(0, 0.43, 0.04) });
   }
 
-  // Yan ayak (tek, +x tarafında; komşu koltukla paylaşılır) + kolçak + sırtlık bağlantısı
+  // Yan ayak (tek, +x tarafında; komşu koltukla paylaşılır) + kalın kolçak + sırtlık bağlantısı
   parts.push({ g: box(0.03, 0.44, 0.3), shade: 0.42, m: T(0.232, 0.22, -0.03) });
   parts.push({ g: box(0.04, 0.06, 0.4), shade: 0.4, m: T(0.232, 0.03, 0.02) });
-  parts.push({ g: box(0.05, 0.04, 0.32), shade: 0.6, m: T(0.232, 0.64, -0.02) });
+  const arm = rich ? soft(roundedSlab(0.06, 0.09, 0.4, 0.025, 2)) : box(0.055, 0.045, 0.34);
+  parts.push({ g: arm, shade: 0.62, m: T(0.232, 0.66, 0.0) });
   parts.push({ g: box(0.035, 0.34, 0.05), shade: 0.45, m: T(0.232, 0.5, -0.19) });
   return finish(parts);
 }
@@ -99,7 +112,7 @@ const _hidden = new THREE.Matrix4().makeScale(0, 0, 0);
 export function createSeatMeshes(seats, categories, quality) {
   const detail = quality.seatDetail ?? 'high';
   const geos = { folded: createSeatGeometry('folded', detail), open: createSeatGeometry('open', detail) };
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.58, metalness: 0.06 });
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0.02 });
 
   const groups = new Map();
   for (const s of seats) {

@@ -9,6 +9,7 @@ import { buildBlockLabels } from './build/labels.js';
 import { buildStage } from './build/stage.js';
 import { buildCourt } from './build/court.js';
 import { buildLights } from './build/lights.js';
+import { buildEffects } from './build/effects.js';
 
 /**
  * Config + koltuk modelinden tüm 3D sahneyi üretir.
@@ -40,6 +41,7 @@ export function createVenue({ config, model, quality, scene }) {
   buildStage(ctx);
   buildCourt(ctx);
   buildLights(ctx);
+  buildEffects(ctx);
 
   const seatVis = createSeatMeshes(model.seats, config.categories, quality);
   for (const mesh of Object.values(seatVis.meshes)) groups[mesh.userData.group].add(mesh);
