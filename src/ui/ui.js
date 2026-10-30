@@ -51,7 +51,7 @@ export function createUI({ config, model, handlers }) {
   $('btnQuality').addEventListener('click', () => handlers.onQuality());
   $('btnFs').addEventListener('click', () => {
     if (document.fullscreenElement) document.exitFullscreen();
-    else document.documentElement.requestFullscreen?.();
+    else document.documentElement.requestFullscreen?.()?.catch?.(() => {});
   });
   $('btnAbout').addEventListener('click', () => {
     el.about.showModal();
