@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0d11" />
+    <title>Koltuğundan Gör — Volkswagen Arena İstanbul</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d11'/%3E%3Cpath d='M7 20h18v3H7zM9 9h6v9H9zM17 12h6v6h-6z' fill='%234cc2ff'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="gl"></canvas>
+
+      <header id="topbar">
+        <div class="brand">
+          <span class="logo" aria-hidden="true"></span>
+          <div class="brand-text">
+            <b>Koltuğundan Gör</b>
+            <small id="venueName">Volkswagen Arena İstanbul</small>
+          </div>
+        </div>
+        <div class="seg" id="cfgSeg" role="tablist" aria-label="Etkinlik düzeni">
+          <button data-cfg="concert" role="tab">Konser</button>
+          <button data-cfg="basketball" role="tab">Basketbol</button>
+        </div>
+        <div class="tools">
+          <button id="btnTint" class="chip" aria-pressed="false" title="Koltukları kategori renklerine göre boya">Kategoriler</button>
+          <button id="btnQuality" class="chip" title="Grafik kalitesi">Kalite: <span id="qLabel">Oto</span></button>
+          <button id="btnAbout" class="chip" title="Veri kaynakları ve varsayımlar">Bilgi</button>
+          <button id="btnFs" class="chip icon" title="Tam ekran" aria-label="Tam ekran">⛶</button>
+        </div>
+      </header>
+
+      <aside id="panel" class="open">
+        <button id="panelToggle" aria-label="Paneli aç/kapat"><span></span></button>
+        <div class="panel-scroll">
+          <section class="card" id="pickCard">
+            <h2>Koltuk seç</h2>
+            <div class="field"><label for="selBlock">Blok</label><select id="selBlock"></select></div>
+            <div class="row2">
+              <div class="field"><label for="selRow">Sıra</label><select id="selRow" disabled></select></div>
+              <div class="field"><label for="selSeat">Koltuk</label><select id="selSeat" disabled></select></div>
+            </div>
+            <p class="hint">Ya da salonda / planda bir koltuğa tıkla.</p>
+          </section>
+
+          <section class="card" id="infoCard" hidden>
+            <h2>Seçili koltuk</h2>
+            <div class="big" id="infoTitle"></div>
+            <div class="cat"><i id="infoDot"></i><span id="infoCat"></span></div>
+            <dl class="stats" id="infoStats"></dl>
+            <button id="btnView" class="primary">Koltuktan göster</button>
+            <p class="note">Model, resmî plan ve fotoğraflardan üretilmiş tahmini bir yerleşimdir.</p>
+          </section>
+
+          <section class="card" id="mapCard">
+            <h2>Plan <small id="mapHint"></small></h2>
+            <div class="mini-wrap"><canvas id="mini"></canvas></div>
+            <div id="legend" class="legend"></div>
+          </section>
+        </div>
+      </aside>
+
+      <div id="hud" hidden>
+        <div class="hud-row">
+          <button id="hudPrev" aria-label="Önceki koltuk">◀</button>
+          <div class="hud-main">
+            <b id="hudTitle"></b>
+            <small id="hudSub"></small>
+          </div>
+          <button id="hudNext" aria-label="Sonraki koltuk">▶</button>
+        </div>
+        <div class="hud-row small">
+          <button id="hudFront" aria-label="Bir sıra öne">▲ Öne</button>
+          <button id="hudBack" aria-label="Bir sıra arkaya">▼ Arkaya</button>
+          <button id="hudReset">⟲ Sahneye bak</button>
+          <button id="hudExit" class="accent">Salona dön</button>
+        </div>
+        <div class="hud-hint">Sürükle: etrafa bak · Tekerlek/çimdik: yakınlaştır · ← → ↑ ↓: koltuk değiştir · Esc: çık</div>
+      </div>
+
+      <div id="tip" hidden></div>
+      <div id="toast" hidden></div>
+
+      <div id="loading">
+        <div class="spinner"></div>
+        <div>Salon oluşturuluyor…</div>
+        <small id="loadDetail"></small>
+      </div>
+
+      <dialog id="about">
+        <form method="dialog">
+          <h2>Veri kaynakları ve varsayımlar</h2>
+          <div id="aboutBody"></div>
+          <button class="primary">Kapat</button>
+        </form>
+      </dialog>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "3d-etkinlik-model",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Parametrik 3D koltuk görünümü motoru - ilk mekan: Volkswagen Arena Istanbul",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:single": "vite build --config vite.single.config.js",
+    "preview": "vite preview",
+    "stats": "node scripts/venue-stats.mjs"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5",
+    "vite-plugin-singlefile": "^2.3.4"
+  }
+}
