@@ -54,6 +54,16 @@ const T = (x, y, z) => new THREE.Matrix4().makeTranslation(x, y, z);
 const RX = (a) => new THREE.Matrix4().makeRotationX(a);
 
 export function createSeatGeometry(kind = 'open', detail = 'high') {
+  if (detail === 'far') {
+    // uzak LOD: 4 kutu (48 üçgen) — sırt, oturak (katlı/açık), yan ayak, kolçak
+    const parts = [];
+    const tilt = -0.17;
+    parts.push({ g: box(0.43, 0.8, 0.075), shade: 1.0, m: T(0, 0.85, -0.2).multiply(RX(tilt)) });
+    parts.push({ g: box(0.42, kind === 'folded' ? 0.44 : 0.085, kind === 'folded' ? 0.085 : 0.44), shade: 1.0, m: kind === 'folded' ? T(0, 0.64, -0.12) : T(0, 0.43, 0.04) });
+    parts.push({ g: box(0.03, 0.44, 0.3), shade: 0.42, m: T(0.232, 0.22, -0.03) });
+    parts.push({ g: box(0.05, 0.05, 0.38), shade: 0.6, m: T(0.232, 0.66, 0.0) });
+    return finish(parts);
+  }
   const hi = detail !== 'low';
   const ultra = hi; // yumuşatılmış normaller orta ve yüksek kalitede
   const rich = detail === 'high';
@@ -109,11 +119,14 @@ const STYLE_COLORS = {
 const _hidden = new THREE.Matrix4().makeScale(0, 0, 0);
 
 /**
- * Koltukları (meshKey, geometri türü) gruplarına göre InstancedMesh'lere böler.
+ * Koltuklar: (meshKey, geometri türü) gruplarına göre InstancedMesh'ler, kameraya göre İKİ DETAY KADEMESİ (LOD):
+ * yakın koltuklar tam modelle, uzaktakiler 48 üçgenlik basit modelle çizilir. Kamera 2 m'den fazla oynayınca yeniden dağıtılır.
  */
 export function createSeatMeshes(seats, categories, quality) {
-  const detail = quality.seatDetail ?? 'high';
-  const geos = { folded: createSeatGeometry('folded', detail), open: createSeatGeometry('open', detail) };
+  const nearDetail = quality.seatDetail ?? 'high';
+  const nearR = quality.seatNear ?? 0;
+  const near = { folded: createSeatGeometry('folded', nearDetail), open: createSeatGeometry('open', nearDetail) };
+  const far = { folded: createSeatGeometry('folded', 'far'), open: createSeatGeometry('open', 'far') };
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0.02 });
 
   const groups = new Map();
@@ -124,75 +137,95 @@ export function createSeatMeshes(seats, categories, quality) {
     groups.get(k).push(s);
   }
 
-  const meshes = {};
-  const dummy = new THREE.Object3D();
   const catColors = {};
   for (const [k, v] of Object.entries(categories)) catColors[k] = new THREE.Color(v.color);
 
+  const dummy = new THREE.Object3D();
+  const meshes = {};
+  const sets = [];
   for (const [key, list] of groups) {
-    const geo = geos[list[0].geo];
-    const mesh = new THREE.InstancedMesh(geo, mat, list.length);
-    mesh.name = `seats:${key}`;
-    mesh.userData.configs = list[0].configs;
-    mesh.castShadow = quality.shadows;
-    mesh.receiveShadow = quality.shadows;
-    mesh.frustumCulled = false;
+    const n = list.length;
+    const g = { key, list, n, mats: new Float32Array(n * 16), cols: new Float32Array(n * 3), hidden: new Uint8Array(n) };
+    const mk = (geo, tag) => {
+      const m = new THREE.InstancedMesh(geo, mat, n);
+      m.name = `seats:${key}:${tag}`;
+      m.userData.configs = list[0].configs;
+      m.castShadow = false; // koltuk gölgesi kapalı: maliyetli, görsel katkısı küçük
+      m.receiveShadow = quality.shadows;
+      m.frustumCulled = false;
+      m.count = 0;
+      m.setColorAt(0, STYLE_COLORS.standard); // instanceColor tamponunu oluştur
+      meshes[`${key}:${tag}`] = m;
+      return m;
+    };
+    g.near = mk(near[list[0].geo], 'n');
+    g.far = mk(far[list[0].geo], 'f');
     list.forEach((s, i) => {
       s.instanceId = i;
-      s.meshName = key;
+      s.setIndex = sets.length;
       dummy.position.set(s.pos[0], s.pos[1], s.pos[2]);
       dummy.rotation.set(0, s.yaw, 0);
       dummy.scale.setScalar(s.scale);
       dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-      mesh.setColorAt(i, STYLE_COLORS[s.style] ?? STYLE_COLORS.standard);
+      dummy.matrix.toArray(g.mats, i * 16);
+      const c = STYLE_COLORS[s.style] ?? STYLE_COLORS.standard;
+      g.cols[i * 3] = c.r; g.cols[i * 3 + 1] = c.g; g.cols[i * 3 + 2] = c.b;
     });
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.instanceColor.needsUpdate = true;
-    meshes[key] = mesh;
+    sets.push(g);
   }
 
-  const meshOf = (s) => meshes[s.meshName];
-  const drawn = (s) => !s.noMesh;
+  const camPos = new THREE.Vector3(1e9, 0, 0);
+  let dirty = true;
   const tmp = new THREE.Color();
-  const _m = new THREE.Matrix4();
+
+  function rebuild(cam) {
+    const r2 = nearR * nearR;
+    for (const g of sets) {
+      let kn = 0, kf = 0;
+      const na = g.near.instanceMatrix.array, fa = g.far.instanceMatrix.array;
+      const nc = g.near.instanceColor.array, fc = g.far.instanceColor.array;
+      for (let i = 0; i < g.n; i++) {
+        if (g.hidden[i]) continue;
+        const s = g.list[i];
+        const dx = s.pos[0] - cam.x, dy = s.pos[1] - cam.y, dz = s.pos[2] - cam.z;
+        const isNear = nearR > 0 && dx * dx + dy * dy + dz * dz < r2;
+        const mm = g.mats.subarray(i * 16, i * 16 + 16), cc = g.cols.subarray(i * 3, i * 3 + 3);
+        if (isNear) { na.set(mm, kn * 16); nc.set(cc, kn * 3); kn++; } else { fa.set(mm, kf * 16); fc.set(cc, kf * 3); kf++; }
+      }
+      g.near.count = kn; g.far.count = kf;
+      g.near.instanceMatrix.needsUpdate = g.far.instanceMatrix.needsUpdate = true;
+      g.near.instanceColor.needsUpdate = g.far.instanceColor.needsUpdate = true;
+    }
+    camPos.copy(cam);
+    dirty = false;
+  }
 
   return {
     meshes,
-    geometry: geos.open,
+    geometry: near.open,
+    /** Her karede çağrılır; kamera yeterince oynadıysa ya da veri değiştiyse LOD yeniden dağıtılır. */
+    update(cam) {
+      if (dirty || cam.distanceToSquared(camPos) > 4) rebuild(cam);
+    },
     /** Kendi koltuğumuz: katlı oturak yerine kamera altında açık koltuk çizilir → örneği gizle. */
     setSeatHidden(s, hidden) {
-      if (!drawn(s)) return;
-      const m = meshOf(s);
-      if (hidden) {
-        m.setMatrixAt(s.instanceId, _hidden);
-      } else {
-        dummyPlace(dummy, s);
-        _m.copy(dummy.matrix);
-        m.setMatrixAt(s.instanceId, _m);
-      }
-      m.instanceMatrix.needsUpdate = true;
+      if (s.noMesh) return;
+      sets[s.setIndex].hidden[s.instanceId] = hidden ? 1 : 0;
+      dirty = true;
     },
     /** Kategori renkleri ve blok vurgusu. Varsayılan: gerçek koltuk rengi (siyah). */
     refreshColors({ tint, blockId, accent }) {
       for (const s of seats) {
-        if (!drawn(s)) continue;
-        const m = meshOf(s);
+        if (s.noMesh) continue;
         if (tint) tmp.copy(catColors[s.category] ?? STYLE_COLORS.standard).multiplyScalar(0.62);
         else tmp.copy(STYLE_COLORS[s.style] ?? STYLE_COLORS.standard);
         if (blockId && s.blockId === blockId) tmp.copy(accent);
-        m.setColorAt(s.instanceId, tmp);
+        const g = sets[s.setIndex], i = s.instanceId;
+        g.cols[i * 3] = tmp.r; g.cols[i * 3 + 1] = tmp.g; g.cols[i * 3 + 2] = tmp.b;
       }
-      for (const m of Object.values(meshes)) m.instanceColor.needsUpdate = true;
+      dirty = true;
     },
     styleColor: (style) => STYLE_COLORS[style] ?? STYLE_COLORS.standard,
-    geos,
+    geos: near,
   };
-}
-
-function dummyPlace(d, s) {
-  d.position.set(s.pos[0], s.pos[1], s.pos[2]);
-  d.rotation.set(0, s.yaw, 0);
-  d.scale.setScalar(s.scale);
-  d.updateMatrix();
 }

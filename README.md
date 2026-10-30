@@ -13,7 +13,7 @@ npm run dev            # http://localhost:5173
 npm run build          # dist/  (siteye gömmek için)
 npm run build:single   # dist-single/index.html → tek dosya, çift tıkla açılır (demo / video çekimi)
 npm run stats          # koltuk sayıları + resmî rakamlarla karşılaştırma
-npm test               # 14 birim testi (koltuk modeli, plan aralıkları, çakışma, seçici, etkinlik düzenleri, kamera sınırı)
+npm test               # 16 birim testi (koltuk modeli, plan aralıkları, çakışma, seçici, etkinlik düzenleri, kamera sınırı)
 npm run smoke          # tarayıcı duman testi (Playwright; her bloğun koltuk görünümü)
 ```
 
@@ -25,11 +25,13 @@ Yüksek = bloom + vinyet + 4096 gölge haritası + yumuşatılmış koltuklar, O
 | Eylem | Nasıl |
 |---|---|
 | Salonu döndür / yakınlaştır | Sürükle / tekerlek (kamera salon içinde sınırlıdır: yerin altına, çatının üstüne, duvarların dışına çıkılamaz) |
-| Koltuk seç | Salonda ya da planda bir **bloğa dokun** → blok karşıdan görünür → bir **koltuğa dokun**; ya da Blok → Sıra → Koltuk listesi |
+| Koltuk seç | Salonda ya da planda bir **bloğa dokun** (localar dahil: mor çerçeveli alanlar) → blok karşıdan görünür → bir **koltuğa dokun**; ya da Blok → Sıra → Koltuk listesi |
 | Koltuktan bak | Seçince otomatik uçar; sürükleyerek etrafa bak, tekerlek/çimdik = yakınlaştır |
 | Komşu koltuk | ← → (koltuk), ↑ ↓ (sıra) · Esc = salona dön · Boşluk = sahneye/sahaya bak |
-| Etkinlik düzeni | Üstteki seçici: Konser (oturmalı / ayakta), Senfoni · film konseri, Basketbol, Gala · ödül · moda, E-spor → [docs/etkinlikler.md](docs/etkinlikler.md) |
+| Etkinlik düzeni | Üstteki seçici: Konser (oturmalı / ayakta), Senfoni · film konseri, Basketbol, Gala · ödül · moda, E-spor, Buz gösterisi, Konferans → [docs/etkinlikler.md](docs/etkinlikler.md); referanslar ve firmalar → [docs/referanslar.md](docs/referanslar.md) |
 | Kategori renkleri | "Kategoriler" düğmesi |
+| Seyirci | "Seyirci" düğmesi (ayakta, gala, basketbol, buz gösterisinde varsayılan açık; hafif cihazda kapalı) |
+| Tam ekran | ⛶ düğmesi: tarayıcı izin veriyorsa gerçek tam ekran, değilse (iPhone, gömülü sayfa) arayüzü gizleyen sinema modu; çıkış sağ üstteki ⤡ |
 
 ## Yapı
 

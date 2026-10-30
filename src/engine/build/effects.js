@@ -84,7 +84,7 @@ export function buildEffects(ctx) {
   dust.frustumCulled = false;
   scene.add(dust);
 
-  const dustLook = { concert: [0.38, 0xcfb8ff], standing: [0.42, 0xcfb8ff], esports: [0.4, 0xffb8c8], gala: [0.3, 0xffc8f0], symphony: [0.22, 0xffe3b8] };
+  const dustLook = { concert: [0.38, 0xcfb8ff], standing: [0.42, 0xcfb8ff], esports: [0.4, 0xffb8c8], ice: [0.2, 0xdff0ff], conference: [0.1, 0xffffff], gala: [0.3, 0xffc8f0], symphony: [0.22, 0xffe3b8] };
   hooks.onConfig.push((key) => {
     const [o, c] = dustLook[key] ?? [0.12, 0xffffff];
     dust.material.opacity = o;
@@ -93,6 +93,10 @@ export function buildEffects(ctx) {
 
   const p = geo.attributes.position;
   anim.push((t) => {
+    const lite = !!state.lite;
+    dust.visible = !lite;
+    goboGroup.visible = !lite && goboGroup.visible;
+    if (lite) { laserGroup.visible = false; return; }
     for (let i = 0; i < N; i++) {
       p.array[i * 3 + 1] += Math.sin(t * 0.4 + seed[i]) * 0.0016;
       p.array[i * 3] += Math.cos(t * 0.3 + seed[i] * 1.7) * 0.0022;
@@ -100,7 +104,9 @@ export function buildEffects(ctx) {
     p.needsUpdate = true;
 
     if (!goboIds.includes(state.config)) return;
+    const gy = { standing: 1.78, concert: 1.28, esports: 1.28, gala: 0.95 }[state.config] ?? 1.2;
     for (const g of gobos) {
+      g.mesh.position.y = gy;
       g.mesh.rotation.y = t * 0.35 + g.phase;
       g.m.color.setHSL(((t * 0.05 + g.phase / 6) % 1 + 1) % 1, 0.9, 0.5);
       g.m.opacity = 0.35 + 0.25 * Math.sin(t * 1.3 + g.phase);

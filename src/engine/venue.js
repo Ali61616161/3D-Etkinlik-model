@@ -10,6 +10,8 @@ import { buildStage } from './build/stage.js';
 import { buildSymphony } from './build/symphony.js';
 import { buildGala } from './build/gala.js';
 import { buildEsports } from './build/esports.js';
+import { buildIce } from './build/ice.js';
+import { buildConference } from './build/conference.js';
 import { buildCourt } from './build/court.js';
 import { buildLights } from './build/lights.js';
 import { buildEffects } from './build/effects.js';
@@ -60,6 +62,8 @@ export function createVenue({ config, model, quality, scene }) {
   buildSymphony(ctx);
   buildGala(ctx);
   buildEsports(ctx);
+  buildIce(ctx);
+  buildConference(ctx);
   buildCourt(ctx);
   buildLights(ctx);
   buildEffects(ctx);

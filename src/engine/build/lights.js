@@ -54,6 +54,8 @@ export function buildLights(ctx) {
     // Senfoni: sıcak, yumuşak; gala: koyu salon + macenta/mavi yıkama; e-spor: kırmızı/camgöbeği takım renkleri
     classical: { hemi: 0.62, sun: 0.32, game: 0, wash: 300, bg: 0x09070a, fog: [0x110e0c, 0.0072], colors: [0xfff0e0, 0xffe8d0, 0xfff4ea] },
     gala: { hemi: 0.34, sun: 0.16, game: 0, wash: 560, bg: 0x050508, fog: [0x0b0714, 0.0095], colors: [0xff3d9a, 0x3d7bff, 0xb04cff] },
+    ice: { hemi: 0.95, sun: 0.85, game: 0, wash: 320, bg: 0x070a10, fog: [0x0b111a, 0.0045], colors: [0x9fd0ff, 0xffffff, 0xbfe0ff] },
+    conference: { hemi: 1.05, sun: 0.95, game: 0, wash: 220, bg: 0x090a0d, fog: [0x0d0f14, 0.0034], colors: [0xdfe9ff, 0xffffff, 0xdfe9ff] },
     esports: { hemi: 0.36, sun: 0.18, game: 0, wash: 620, bg: 0x040508, fog: [0x070a14, 0.0105], colors: [0xff3040, 0x20d8ff, 0xff3040] },
   };
 

@@ -9,12 +9,13 @@ Araştırma tarihi: 2026-10-30. Kesin ve güncel takvim için vwarena.com ve Bil
 | **Senfoni / film konseri** | "Harry Potter ve Ateş Kadehi In Concert" (28 Kas 2026), "Adamlar – An Epic Symphony", Ebru Yaşar Senfoni, Emel Sayın "Yeşilçam Senfonisi", Fazıl Say Nazım Oratoryosu (2016) | `Senfoni · film konseri` — orkestra podyumu (3 kademe), ~60 sandalye + nota sehpası, şef podyumu, kuyruklu piyano, timpani, 16×7 m film perdesi, sıcak ışık |
 | **Basketbol** | Darüşşafaka ev sahibi; resmî 5.240; çıkarılabilir parke, hareketli potalar | `Basketbol` — FIBA sahası, ek tribünler (uç + yan, tahmini), saha kenarı VIP, canlı skor |
 | **Gala / ödül / moda** | Wikipedia: fashion show, award ceremony; Pozitif "Men of the Year 2016" ve defile fotoğrafları | `Gala · ödül · moda` — 24 yuvarlak masa × 10 sandalye (masa/sandalye seçimi), T podyum + yuvarlak podyum, dev LED perde, halka truss + LED küp |
+| **Buz gösterisi** | vwarena.com: salon buz pistine dönüşebilir; "Ice Age Live" (2015) | `Buz gösterisi` — 22×44 m buz pisti (tahmini), bantlar + cam, Zamboni, buzul dekoru, dev LED perde, kar parçacıkları; izleyici tribünlerde |
+| **Konferans / kurumsal** | vwarena.com: konferans salonu; Pozitif fotoğrafı; Arkitera: perde ile salon küçültme | `Konferans · kurumsal` — tiyatro düzeni (zemin blokları), 3 mavi LED ekran, kürsü, moderatör koltukları; tribünler siyah perdeyle kapalı |
 | **E-spor** | "VALORANT Champions İstanbul" (yorum sayfasında geçiyor; kanıt zayıf) | `E-spor` — sahnede iki takım masası, kupa podyumu, kıvrımlı LED duvar, yan sütunlar, seyirci maç ekranları |
 
 ## Modellenmedi (kanıt yok / veri yok)
 
-* **Konferans/fuar** (resmî sitede "dönüşebilir" deniyor, boyut ve düzen yok; Pozitif fotoğrafı yalnızca bir konferans kurulumu gösteriyor).
-* **Buz pisti** (resmî sitede sayılıyor; Uniq'in buz pisti dış mekân ve bu salonla ilgisiz görünüyor).
+* **Fuar** (resmî sitede sayılıyor; düzen/ölçü yok).
 * **Stand-up, tiyatro, dans** (türler anılıyor, mekâna özel düzen bilgisi yok; kısmi düzen için senfoni/gala düzeni uyarlanabilir).
 * Boks, Disney/buz gösterisi: hiçbir kaynakta doğrulanamadı.
 

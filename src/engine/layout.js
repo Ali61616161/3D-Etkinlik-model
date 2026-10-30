@@ -49,6 +49,7 @@ export function ringLayout(config) {
 
   const locas = [];
   const w = r.locaWidth;
+  const we = r.endLocaWidth ?? w;
   const sideHalf = (r.sideLocas * w) / 2;
   // 1–8: sol hat, sahneden karşı uca
   for (let i = 0; i < r.sideLocas; i++) {
@@ -58,9 +59,9 @@ export function ringLayout(config) {
   const m1 = tangentNormal(left, 0.5);
   locas.push({ n: 9, front: m1.pos, facing: m1.n });
   // 10–15: karşı uç, soldan sağa
-  const endHalf = (r.endLocas * w) / 2;
+  const endHalf = (r.endLocas * we) / 2;
   for (let i = 0; i < r.endLocas; i++) {
-    locas.push({ n: 10 + i, front: [-endHalf + w / 2 + i * w, r.endFrontZ], facing: [0, -1] });
+    locas.push({ n: 10 + i, front: [-endHalf + we / 2 + i * we, r.endFrontZ], facing: [0, -1], width: we });
   }
   // 16: sağ köşe
   const m2 = tangentNormal(right, 0.5);
@@ -212,16 +213,21 @@ export function buildSeatModel(config) {
   for (const L of ring.locas) {
     const f = L.facing;
     const u = [-f[1], f[0]];
+    const big = lc.bigLocas?.includes(L.n);
+    const perRow = big ? lc.bigSeatsPerRow : lc.seatsPerRow;
+    const W = L.width ?? config.hall.ring.locaWidth;
+    const spacing = (W - 1.1) / perRow;
     const block = newBlock({ id: `L${L.n}`, name: `Loca ${L.n}`, category: lc.category, style: 'lounge' }, locaTribune, {
       locaNo: L.n,
+      capacity: perRow * lc.rows,
     });
     block.facing = f;
     for (let r = 0; r < lc.rows; r++) {
       const rowObj = { index: r, label: String(r + 1), seats: [] };
       block.rows.push(rowObj);
       const d = lc.rowDepth[r];
-      for (let i = 0; i < lc.seatsPerRow; i++) {
-        const off = (i - (lc.seatsPerRow - 1) / 2) * lc.seatSpacing;
+      for (let i = 0; i < perRow; i++) {
+        const off = (i - (perRow - 1) / 2) * spacing;
         addSeat(block, rowObj, {
           seatNo: i + 1,
           pos: [L.front[0] - f[0] * d + u[0] * off, floorY + r * lc.rowRise, L.front[1] - f[1] * d + u[1] * off],
@@ -294,8 +300,6 @@ export function makeGroundHeight(config) {
         if (r >= 0 && r < t.rows) h = Math.max(h, t.baseY + r * t.rise);
       }
     }
-    // loca halkası yürüme kotu
-    if (Math.abs(x) > ring.frontX - 1.2 && z > ring.wingZ && z < ring.chamferStartZ) h = Math.max(h, ring.floorY);
     return h;
   };
 }
@@ -313,7 +317,7 @@ export function makeCameraBounds(config, groundHeight) {
   const cx = ring.frontX - (ring.endFrontZ - ring.chamferStartZ); // köşe yayının merkez x'i
   const cz = ring.chamferStartZ;
   const rc = ring.endFrontZ - ring.chamferStartZ - 1.2;
-  const yMax = roof.apexY - 3.2;
+  const yMax = roof.apexY - roof.trussDepth - 1.2;
   return (p) => {
     p.x = Math.max(-xMax, Math.min(xMax, p.x));
     p.z = Math.max(zMin, Math.min(zMax, p.z));

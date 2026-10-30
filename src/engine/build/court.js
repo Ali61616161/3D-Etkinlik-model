@@ -238,7 +238,7 @@ export function buildCourt(ctx) {
   ringMesh.position.set(0, cubeY - 1.38, court.centerZ);
   root.add(ringMesh);
   for (const [x, z] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) {
-    b.bar('steel', [x, cubeY + 1.4, z + court.centerZ], [x * 1.7, 19.8, z * 1.7 + court.centerZ], 0.04);
+    b.bar('steel', [x, cubeY + 1.4, z + court.centerZ], [x * 1.7, 15.6, z * 1.7 + court.centerZ], 0.04);
   }
 
   // ── Köşe skorbordları ─────────────────────────────────────────────────────────

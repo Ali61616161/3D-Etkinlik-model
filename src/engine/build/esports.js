@@ -110,8 +110,8 @@ export function buildEsports(ctx) {
     m.rotation.y = -s * 0.28;
     root.add(m);
     b.box('black', 7.2, 4.14, 0.2, m.position.x, m.position.y, m.position.z - 0.14, -s * 0.28);
-    b.bar('steel', [m.position.x - 2.6, 11.6, m.position.z], [m.position.x - 2.6, 19, m.position.z], 0.04);
-    b.bar('steel', [m.position.x + 2.6, 11.6, m.position.z], [m.position.x + 2.6, 19, m.position.z], 0.04);
+    b.bar('steel', [m.position.x - 2.6, 11.6, m.position.z], [m.position.x - 2.6, 15.6, m.position.z], 0.04);
+    b.bar('steel', [m.position.x + 2.6, 11.6, m.position.z], [m.position.x + 2.6, 15.6, m.position.z], 0.04);
   }
 
   // Üst truss çerçevesi + hareketli kafalar

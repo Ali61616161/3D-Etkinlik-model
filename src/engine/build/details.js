@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Batch } from '../batch.js';
 import { exitSignTexture } from '../textures.js';
+import { labelMesh } from './labels.js';
 
 /**
  * Çevre detayları: acil çıkış kapıları ve levhaları, akustik ahşap panel duvarlar,
@@ -10,7 +11,7 @@ export function buildDetails(ctx) {
   const { config, mats, groups, hooks } = ctx;
   const ring = config.hall.ring;
   const roof = config.hall.roof;
-  const F = ring.frontX;
+  const F = ring.frontX + ring.depth + (ring.corridor ?? 1.5); // arka duvar hattı
 
   const structure = new Batch();
   const shell = new Batch();
@@ -18,13 +19,13 @@ export function buildDetails(ctx) {
   const signs = [];
 
   // Kapı: ön hat (front) + bakış yönü (f) çerçevesinde
-  const door = (batch, front, f, w, h, { sign = true } = {}) => {
+  const door = (batch, front, f, w, h, { sign = true, y0 = 0 } = {}) => {
     const u = [-f[1], f[0]];
     const ry = Math.atan2(f[0], f[1]);
     const P = (lat, depth) => [front[0] + u[0] * lat - f[0] * depth, front[1] + u[1] * lat - f[1] * depth];
     const put = (key, bw, bh, bd, lat, depth, y) => {
       const [x, z] = P(lat, depth);
-      batch.box(key, bw, bh, bd, x, y, z, ry);
+      batch.box(key, bw, bh, bd, x, y + y0, z, ry);
     };
     put('doorDark', w, h, 0.08, 0, -0.04, h / 2);
     put('black', 0.16, h + 0.16, 0.14, -w / 2 - 0.08, -0.05, (h + 0.16) / 2);
@@ -34,13 +35,20 @@ export function buildDetails(ctx) {
     put('yellow', w, 0.06, 0.2, 0, 0.1, 0.03); // eşik şeridi
     if (sign) {
       const [x, z] = P(0, -0.015);
-      signs.push({ x, y: h + 0.62, z, ry });
+      signs.push({ x, y: h + 0.62 + y0, z, ry });
     }
   };
 
-  // Zemin seviyesi: yan hat köşe boşluğu (tribün ile köşe yelpazesi arası)
-  door(structure, [-F, 22.5], [1, 0], 3.0, 2.7);
-  door(structure, [F, 22.5], [-1, 0], 3.0, 2.7);
+  // Kapılar (Arkitera: "KAPI / GATE 01–11", sarı RAL 1028 yazı siyah zeminde): tribün tepesindeki giriş tünelleri
+  // yan duvarda 1,4–11 numaralı kapı olarak, zemin katta ise sahne kanadında yükleme kapıları.
+  const gateZ = [-17.5, -8.8, 0, 8.8, 17.5];
+  const gateLabels = [];
+  for (const s of [-1, 1]) {
+    gateZ.forEach((z, i) => {
+      door(structure, [s * (F - 0.1), z], [-s, 0], 2.4, 2.6, { sign: false, y0: 6.4 });
+      gateLabels.push({ text: String(s < 0 ? i + 1 : i + 6), pos: [s * (F - 0.25), 6.4 + 3.4, z], ry: Math.atan2(-s, 0), w: 1.1, h: 0.55 });
+    });
+  }
   // Sahne kanadı: yükleme kapıları
   for (const s of [-1, 1]) {
     door(shell, [s * F, -25.2], [-s, 0], 4.2, 3.8);
@@ -60,6 +68,7 @@ export function buildDetails(ctx) {
 
   // Havalandırma kanalları (kemerlerin altından boydan boya) + askılar
   const zA = roof.zMin + 1.5, zB = roof.zMax - 1.5;
+  const ductDrop = (roof.trussDepth ?? 1.5) + 1.2;
   const duct = (x, y, r) => {
     const g = new THREE.CylinderGeometry(r, r, zB - zA, 20, 1, false).rotateX(Math.PI / 2);
     structure.geometry('duct', g, x, y, (zA + zB) / 2);
@@ -75,14 +84,14 @@ export function buildDetails(ctx) {
     const R = (roof.halfSpan ** 2 + sag ** 2) / (2 * sag);
     return roof.apexY - R + Math.sqrt(R * R - x * x);
   };
-  duct(-12.5, archY(12.5) - 2.8, 0.38);
-  duct(12.5, archY(12.5) - 2.8, 0.38);
-  duct(-22, archY(22) - 2.6, 0.3);
-  duct(22, archY(22) - 2.6, 0.3);
+  duct(-12.5, archY(12.5) - ductDrop, 0.38);
+  duct(12.5, archY(12.5) - ductDrop, 0.38);
+  duct(-22, archY(22) - ductDrop, 0.3);
+  duct(22, archY(22) - ductDrop, 0.3);
   // Kablo taşıyıcılar
   for (const x of [-5.5, 5.5]) {
-    structure.box('steel', 0.5, 0.06, zB - zA, x, archY(x) - 2.3, (zA + zB) / 2);
-    for (let z = zA + 4; z < zB; z += 6) structure.bar('steel', [x, archY(x) - 2.3, z], [x, archY(x) - 1.3, z], 0.03);
+    structure.box('steel', 0.5, 0.06, zB - zA, x, archY(x) - ductDrop + 0.2, (zA + zB) / 2);
+    for (let z = zA + 4; z < zB; z += 6) structure.bar('steel', [x, archY(x) - ductDrop + 0.2, z], [x, archY(x) - ductDrop + 1.2, z], 0.03);
   }
 
   // Basketbol: asma hoparlör kümeleri (küpün dört köşesi)
@@ -91,7 +100,7 @@ export function buildDetails(ctx) {
     for (let k = 0; k < 3; k++) game.box('black', 0.9, 0.55, 0.75, x, 13.9 - k * 0.58, z, ry, 0.32);
     game.box('black', 0.8, 0.6, 0.8, x, 12.0, z, ry);
     for (const [dx, dz] of [[-0.35, -0.3], [0.35, -0.3], [-0.35, 0.3], [0.35, 0.3]]) {
-      game.bar('steel', [x + dx, 14.4, z + dz], [x * 1.2 + dx * 0.5, 19.2, z * 1.2 + dz * 0.5], 0.035);
+      game.bar('steel', [x + dx, 14.4, z + dz], [x * 1.2 + dx * 0.5, 15.6, z * 1.2 + dz * 0.5], 0.035);
     }
   }
 
@@ -122,6 +131,7 @@ export function buildDetails(ctx) {
   addSigns(geos.slice(2), groups.shell);
 
   groups.structure.add(structure.build(mats, {}));
+  groups.structure.add(labelMesh(gateLabels, { cols: 5 }));
   groups.shell.add(shell.build(mats, { uvScale: {} }));
   ctx.groupFor(['basketball']).add(game.build(mats, {}));
   const coveGroup = cove.build(mats, {});

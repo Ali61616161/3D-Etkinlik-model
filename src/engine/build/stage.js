@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Batch } from '../batch.js';
+import { beamTexture, dotTexture } from '../textures.js';
 
 /** Kare kesitli truss: 4 ana boru + iki yüzde diyagonaller. a→b eksen, size kesit. */
 export function truss(b, a, c, size = 0.4) {
@@ -71,7 +72,7 @@ export function buildStage(ctx) {
   }
   // Askı halatları (çatıya)
   for (const s of [-1, 1]) {
-    for (const r of rows) b.bar('steel', [s * (towerX - 0.5), r.y + 0.3, r.z], [s * (towerX - 0.5), 19.0, r.z], 0.03);
+    for (const r of rows) b.bar('steel', [s * (towerX - 0.5), r.y + 0.3, r.z], [s * (towerX - 0.5), 15.6, r.z], 0.03);
   }
 
   // Armatürler (gövde siyah; lamba ayrı renkli emissive)
@@ -117,7 +118,7 @@ export function buildStage(ctx) {
     side.rotation.y = -s * 0.22;
     root.add(side);
     b.box('black', sw + 0.2, sh + 0.2, 0.18, side.position.x - s * 0.02, side.position.y, side.position.z - 0.12, -s * 0.22);
-    b.bar('steel', [side.position.x, side.position.y + sh / 2, side.position.z - 0.1], [side.position.x, 19, side.position.z - 0.1], 0.03);
+    b.bar('steel', [side.position.x, side.position.y + sh / 2, side.position.z - 0.1], [side.position.x, 15.6, side.position.z - 0.1], 0.03);
   }
 
   // Hoparlör dizileri (line array): hafif kavisli 12 modül
@@ -127,7 +128,7 @@ export function buildStage(ctx) {
     for (let m = 0; m < 12; m++) {
       b.box('black', 0.72, 0.4, 0.6, x, 11.3 - m * 0.42, z, 0, 0.02 * m);
     }
-    b.bar('steel', [x, 11.6, z], [x, 19, z], 0.04);
+    b.bar('steel', [x, 11.6, z], [x, 15.6, z], 0.04);
   }
   // Sub'lar (sahne önü, kenarlarda)
   for (const s of [-1, 1]) {
@@ -198,10 +199,10 @@ export function buildStage(ctx) {
 
   // Salon üstü truss ızgarası (konsere göre): kalabalık alanı üstünde iki uzun + üç enine kiriş, hareketli kafalar
   {
-    const gy = 15.2;
+    const gy = 14.3;
     for (const x of [-9, 9]) truss(b, [x, gy, -16], [x, gy, 12], 0.45);
     for (const z of [-14, -3, 8]) truss(b, [-9, gy, z], [9, gy, z], 0.45);
-    for (const x of [-9, 9]) for (const z of [-14, -3, 8, 12]) b.bar('steel', [x, gy + 0.2, z], [x, 19.2 + Math.abs(x) * 0.0, z], 0.03);
+    for (const x of [-9, 9]) for (const z of [-14, -3, 8, 12]) b.bar('steel', [x, gy + 0.2, z], [x, 15.6, z], 0.03);
     let gi = 0;
     for (const x of [-9, 9]) {
       for (let z = -15; z <= 11; z += 2.2) {
@@ -246,36 +247,60 @@ export function buildStage(ctx) {
     root.add(g);
   });
 
-  // Işık huzmeleri (additive koniler)
+  // Işık huzmeleri: truss'tan hedeflere (sahnedeki sanatçılar + ön seyirci) uzanır ve orada biter; uçta ışık havuzu oluşur.
+  // Hedefler tarayarak hareket eder; seyirci hedefi oturmalıda baş hizasında (1,15 m), ayakta kalabalıkta 1,75 m.
   const beams = [];
-  const coneGeo = new THREE.CylinderGeometry(0.04, 2.1, 17, 28, 1, true);
-  coneGeo.translate(0, -8.5, 0);
-  for (let i = 0; i < 10; i++) {
+  const coneGeo = new THREE.CylinderGeometry(0.012, 0.1, 1, 24, 1, true);
+  coneGeo.translate(0, -0.5, 0);
+  const fade = beamTexture();
+  const poolTex = dotTexture();
+  const poolGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+  const NB = 12;
+  for (let i = 0; i < NB; i++) {
     const m = new THREE.MeshBasicMaterial({
-      color: new THREE.Color().setHSL(i / 10, 0.9, 0.55),
+      map: fade,
+      color: new THREE.Color().setHSL(i / NB, 0.9, 0.55),
       transparent: true,
-      opacity: 0.1,
+      opacity: 0.22,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.DoubleSide,
+      toneMapped: false,
     });
     const cone = new THREE.Mesh(coneGeo, m);
     const piv = new THREE.Group();
-    const x = -towerX + 1.5 + (i * (2 * towerX - 3)) / 9;
+    const x = -towerX + 1.5 + (i * (2 * towerX - 3)) / (NB - 1);
     piv.position.set(x, rows[1].y - 0.9, rows[1].z);
     piv.add(cone);
     root.add(piv);
-    beams.push({ piv, m, phase: i * 0.7 });
+    const poolMat = new THREE.MeshBasicMaterial({ map: poolTex, color: m.color, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    const pool = new THREE.Mesh(poolGeo, poolMat);
+    pool.renderOrder = 1;
+    root.add(pool);
+    beams.push({ piv, m, pool, poolMat, phase: i * 0.7, toAudience: i % 3 !== 0 });
   }
+  const _tgt = new THREE.Vector3();
+  const _dir = new THREE.Vector3();
+  const _down = new THREE.Vector3(0, -1, 0);
+  const headY = () => (state.config === 'standing' ? 1.75 : 1.15);
 
   // Animasyon: LED duvar içeriği + huzme süpürmesi
   let last = 0;
   anim.push((t) => {
     if (!rockIds.includes(state.config)) return;
     for (const bm of beams) {
-      bm.piv.rotation.x = -0.75 + Math.sin(t * 0.6 + bm.phase) * 0.28;
-      bm.piv.rotation.z = Math.sin(t * 0.45 + bm.phase * 1.3) * 0.5;
+      const k = Math.sin(t * 0.5 + bm.phase);
+      if (bm.toAudience) _tgt.set(Math.sin(t * 0.35 + bm.phase * 1.7) * 11, headY(), -13.6 + (k * 0.5 + 0.5) * 9.5);
+      else _tgt.set(Math.sin(t * 0.4 + bm.phase) * 6.5, st.height + 1.6, -24 + k * 2.2);
+      _dir.subVectors(_tgt, bm.piv.position);
+      const len = _dir.length();
+      _dir.divideScalar(len);
+      bm.piv.quaternion.setFromUnitVectors(_down, _dir);
+      bm.piv.children[0].scale.setScalar(len);
+      bm.pool.position.set(_tgt.x, _tgt.y + 0.04, _tgt.z);
+      bm.pool.scale.setScalar(len * 0.26);
       bm.m.color.setHSL(((t * 0.05 + bm.phase / 7) % 1 + 1) % 1, 0.9, 0.55);
+      bm.poolMat.color.copy(bm.m.color);
     }
     if (t - last < 0.07) return;
     last = t;

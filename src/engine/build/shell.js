@@ -21,6 +21,7 @@ export function buildShell(ctx) {
   const shell = new Batch();
   const ribbons = [];
 
+  const wallTop = archY(roof, ring.frontX + ring.depth) + 0.3;
   const wingEndZ = ring.wingZ;
   // ön hat noktaları: sahne ucundaki kanat başlangıcından, yuvarlak köşeler üzerinden, karşı kanada
   const pts = [[-ring.frontX, wingEndZ], ...path.slice(1, -1), [ring.frontX, wingEndZ]];
@@ -42,19 +43,31 @@ export function buildShell(ctx) {
       batch.box(key, L, h, t, cx, cy, cz, ry);
     };
 
-    // Dolu taban (yürüme/loca zemini kotu)
-    place(structure, 'concreteDark', ring.depth / 2, ring.floorY / 2, ring.floorY, ring.depth);
-    // Fasya
-    place(structure, 'black', 0.15, 8.5, 1.8, 0.3);
-    // Tavan plakası + arka duvar
-    place(shell, 'concreteDark', ring.depth / 2, ring.ceilingY - 0.2, 0.4, ring.depth);
-    place(shell, 'wall', ring.depth + 0.2, ring.ceilingY / 2, ring.ceilingY, 0.4, 0.8);
+    // Loca halkası: ön yüzü siyah çelik "loggia" altı (kantilever, 0,9 m kalın), üstünde loca zemini, arkada koridor.
+    // Altı boş: alt tribünün arka sıraları localarla örtülür (Arkitera B-B kesiti).
+    const D = ring.depth, C = ring.corridor ?? 1.5;
+    place(structure, 'black', D / 2, ring.floorY - 0.45, 0.9, D);
+    place(structure, 'concreteDark', (D + C) / 2, ring.floorY - 0.1, 0.2, D + C);
+    place(structure, 'lampWarm', 0.05, ring.floorY - 0.88, 0.05, 0.06); // alt kenar beyaz ışık hattı
+    // Tavan plakası + loca arkası (tribün arka duvarı çatıya kadar)
+    place(shell, 'concreteDark', D / 2, ring.ceilingY - 0.2, 0.4, D);
+    place(shell, 'wall', D + C + 0.2, wallTop / 2, wallTop, 0.4, 0.8);
+    // Dikmeler: koridor arkasında, ≈5 m aralıkla yere kadar inen betonarme kolonlar
+    {
+      const cols = Math.max(1, Math.round(len / 5.2));
+      for (let i = 0; i < cols; i++) {
+        const t = (i + 0.5) / cols - 0.5;
+        const px = mid[0] + d[0] * len * t - n[0] * (D + C - 0.3);
+        const pz = mid[1] + d[1] * len * t - n[1] * (D + C - 0.3);
+        structure.box('concreteDark', 0.7, ring.floorY - 0.2, 0.7, px, (ring.floorY - 0.2) / 2, pz, ry);
+      }
+    }
 
-    // LED şerit (kendi düzlemi)
-    const geo = new THREE.PlaneGeometry(len, 0.62);
+    // LED şerit: loggia ön yüzünde (kendi düzlemi)
+    const geo = new THREE.PlaneGeometry(len, 0.55);
     const uv = geo.attributes.uv;
     for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * (len / 9));
-    ribbons.push({ geo, pos: [mid[0] + n[0] * 0.012, 8.85, mid[1] + n[1] * 0.012], ry });
+    ribbons.push({ geo, pos: [mid[0] + n[0] * 0.012, ring.floorY - 0.45, mid[1] + n[1] * 0.012], ry });
 
     // Tavan armatürleri (çatı çevresinde projektör sırası)
     const count = Math.max(1, Math.floor(len / 3));
@@ -68,16 +81,15 @@ export function buildShell(ctx) {
   }
 
   // Sahne ucu: kanat duvarları ve arka duvar
-  const hw = ring.frontX;
-  const wallH = archY(roof, hw) + 0.2;
+  const hw = ring.frontX + ring.depth + (ring.corridor ?? 1.5);
   for (const s of [-1, 1]) {
-    shell.box('wall', 0.4, wallH, ring.wingZ - ring.stageWallZ + 0.4, s * (hw + 0.2), wallH / 2, (ring.wingZ + ring.stageWallZ) / 2);
+    shell.box('wall', 0.4, wallTop, ring.wingZ - ring.stageWallZ + 0.4, s * (hw + 0.2), wallTop / 2, (ring.wingZ + ring.stageWallZ) / 2);
   }
-  shell.box('wall', 2 * hw + 0.8, ring.ceilingY, 0.4, 0, ring.ceilingY / 2, ring.stageWallZ - 0.2);
+  shell.box('wall', 2 * hw + 0.8, wallTop, 0.4, 0, wallTop / 2, ring.stageWallZ - 0.2);
 
   // Zemin düzlemleri
   const outer = new THREE.Mesh(
-    new THREE.PlaneGeometry(2 * (ring.frontX + 6), roof.zMax - roof.zMin + 2).rotateX(-Math.PI / 2),
+    new THREE.PlaneGeometry(2 * (ring.frontX + ring.depth + 4), roof.zMax - roof.zMin + 2).rotateX(-Math.PI / 2),
     mats.concreteDark,
   );
   outer.position.set(0, -0.002, (roof.zMax + roof.zMin) / 2);
@@ -106,7 +118,7 @@ export function buildShell(ctx) {
   for (let k = 0; k < roof.ribCount; k++) {
     ribZs.push(roof.zMin + 1.6 + (k * (roof.zMax - roof.zMin - 3.2)) / (roof.ribCount - 1));
   }
-  const depthTruss = 1.5;
+  const depthTruss = roof.trussDepth ?? 1.5;
   const pt = (theta, rad, z) => [rad * Math.sin(theta), cy + rad * Math.cos(theta), z];
   for (const z of ribZs) {
     let prevTop = null, prevBot = null;
@@ -127,6 +139,11 @@ export function buildShell(ctx) {
   for (let j = 0; j <= 14; j++) {
     const th = -thetaMax + (2 * thetaMax * j) / 14;
     steelBatch.bar('steel', pt(th, R + 0.12, ribZs[0]), pt(th, R + 0.12, ribZs[ribZs.length - 1]), 0.13);
+  }
+  // Alt başlık hizasında boydan boya yürüme/aydınlatma köprüleri (fotoğraflardaki sık çelik ızgara)
+  for (let j = 1; j < 14; j++) {
+    const th = -thetaMax + (2 * thetaMax * j) / 14;
+    steelBatch.bar('steel', pt(th, R - depthTruss - 0.05, ribZs[0]), pt(th, R - depthTruss - 0.05, ribZs[ribZs.length - 1]), 0.28, 0.1);
   }
   // Çatı kaplaması (iç yüzey koyu): sahne ucundan karşı uca
   const deckLen = roof.zMax - roof.zMin;
@@ -186,6 +203,8 @@ export function buildShell(ctx) {
     symphony: ['SENFONİ  ★  FİLM KONSERİ', '#ffcf7a'],
     gala: ['GALA  ★  ÖDÜL  ★  MODA', '#ff7ad9'],
     esports: ['E-SPOR  ★  FINALS', '#ff5470'],
+    ice: ['BUZ GÖSTERİSİ  ★  ICE SHOW', '#9fe8ff'],
+    conference: ['KONFERANS  ★  ZİRVE', '#8fb4ff'],
     standing: ['LIVE  ★  KONSER', '#5cc8ff'],
     concert: ['LIVE  ★  KONSER', '#5cc8ff'],
   };
@@ -198,7 +217,7 @@ export function buildShell(ctx) {
     m.rotation.y = r.ry;
     groups.structure.add(m);
   }
-  const houseLevel = { basketball: 2.2, symphony: 0.55, gala: 0.25, esports: 0.12, concert: 0.1, standing: 0.1 };
+  const houseLevel = { basketball: 2.2, symphony: 0.55, gala: 0.25, esports: 0.12, concert: 0.1, standing: 0.1, ice: 1.4, conference: 1.8 };
   hooks.onConfig.push((key) => {
     ribbonMat.map = ribbonFor(key);
     ribbonMat.needsUpdate = true;

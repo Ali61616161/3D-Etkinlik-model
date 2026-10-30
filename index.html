@@ -25,7 +25,8 @@
           <button id="btnTint" class="chip" aria-pressed="false" title="Koltukları kategori renklerine göre boya">Kategoriler</button>
           <button id="btnQuality" class="chip" title="Grafik kalitesi">Kalite: <span id="qLabel">Oto</span></button>
           <button id="btnAbout" class="chip" title="Veri kaynakları ve varsayımlar">Bilgi</button>
-          <button id="btnFs" class="chip icon" title="Tam ekran" aria-label="Tam ekran">⛶</button>
+          <button id="btnCrowd" class="chip" aria-pressed="false" title="Seyirci kalabalığını göster / gizle">Seyirci</button>
+          <button id="btnFs" class="chip icon" title="Tam ekran / sinema modu" aria-label="Tam ekran">⛶</button>
         </div>
       </header>
 
@@ -40,6 +41,7 @@
               <div class="field"><label for="selRow">Sıra</label><select id="selRow" disabled></select></div>
               <div class="field"><label for="selSeat">Koltuk</label><select id="selSeat" disabled></select></div>
             </div>
+            <div id="quick" class="quick"></div>
             <p class="hint">Salonda veya planda bir bloğa dokun: blok karşıdan görünür. Sonra bir koltuğa dokun ya da listeden seç.</p>
           </section>
 
@@ -48,6 +50,7 @@
             <div class="big" id="infoTitle"></div>
             <div class="cat"><i id="infoDot"></i><span id="infoCat"></span></div>
             <dl class="stats" id="infoStats"></dl>
+            <p class="evt-note" id="infoNote"></p>
             <button id="btnView" class="primary">Koltuktan göster</button>
             <p class="note">Model, resmî plan ve fotoğraflardan üretilmiş tahmini bir yerleşimdir.</p>
           </section>
@@ -78,6 +81,12 @@
         <div class="hud-hint">Sürükle: etrafa bak · Tekerlek/çimdik: yakınlaştır · ← → ↑ ↓: koltuk değiştir · Esc: çık</div>
       </div>
 
+      <button id="btnImm" class="chip icon imm" aria-label="Sinema modundan çık" title="Arayüzü geri getir" hidden>⤡</button>
+      <div id="blockBar" hidden>
+        <div class="bb-text"><b id="bbTitle"></b><small id="bbSub"></small></div>
+        <button id="bbGo" class="primary">Buradan göster</button>
+        <button id="bbClose" aria-label="Seçimi kapat">✕</button>
+      </div>
       <div id="tip" hidden></div>
       <div id="toast" hidden></div>
 

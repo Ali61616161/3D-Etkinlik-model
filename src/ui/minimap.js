@@ -122,12 +122,12 @@ export class Minimap {
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
       ctx.font = '600 10px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(cc.kind === 'symphony' ? 'ORKESTRA' : cc.kind === 'gala' ? 'PODYUM' : 'SAHNE', (x0 + x1) / 2, (y0 + y1) / 2 + 3);
+      ctx.fillText(cc.kind === 'symphony' ? 'ORKESTRA' : cc.kind === 'conference' ? 'KÜRSÜ' : cc.kind === 'gala' ? 'PODYUM' : 'SAHNE', (x0 + x1) / 2, (y0 + y1) / 2 + 3);
     } else {
-      const c = cc.court;
+      const c = cc.court ?? cc.rink;
       const [x0, y0] = this._xy(-c.width / 2, c.centerZ - c.length / 2);
       const [x1, y1] = this._xy(c.width / 2, c.centerZ + c.length / 2);
-      ctx.fillStyle = 'rgba(214,176,120,0.5)';
+      ctx.fillStyle = cc.rink ? 'rgba(190,225,255,0.5)' : 'rgba(214,176,120,0.5)';
       ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
       ctx.strokeStyle = 'rgba(255,255,255,0.75)';
       ctx.lineWidth = 1;

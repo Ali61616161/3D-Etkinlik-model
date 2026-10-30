@@ -18,6 +18,13 @@ export function createUI({ config, model, handlers }) {
     infoDot: $('infoDot'),
     infoCat: $('infoCat'),
     infoStats: $('infoStats'),
+    infoNote: $('infoNote'),
+    crowd: $('btnCrowd'),
+    imm: $('btnImm'),
+    quick: $('quick'),
+    bar: $('blockBar'),
+    bbTitle: $('bbTitle'),
+    bbSub: $('bbSub'),
     btnView: $('btnView'),
     legend: $('legend'),
     mapHint: $('mapHint'),
@@ -54,10 +61,11 @@ export function createUI({ config, model, handlers }) {
     handlers.onTint(on);
   });
   $('btnQuality').addEventListener('click', () => handlers.onQuality());
-  $('btnFs').addEventListener('click', () => {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else document.documentElement.requestFullscreen?.()?.catch?.(() => {});
-  });
+  $('btnFs').addEventListener('click', () => handlers.onFullscreen());
+  el.imm.addEventListener('click', () => handlers.onFullscreen());
+  $('bbGo').addEventListener('click', () => handlers.onView());
+  $('bbClose').addEventListener('click', () => handlers.onClearBlock());
+  el.crowd.addEventListener('click', () => handlers.onCrowd(el.crowd.getAttribute('aria-pressed') !== 'true'));
   $('btnAbout').addEventListener('click', () => {
     el.about.showModal();
     el.about.scrollTop = 0;
@@ -127,6 +135,29 @@ export function createUI({ config, model, handlers }) {
       el.legend.innerHTML = [...cats]
         .map((k) => `<span><i style="background:${safeColor(config.categories[k].color)}"></i>${esc(config.categories[k].label)}</span>`)
         .join('');
+      // hızlı seçim: loca ve masa numaraları (büyük, parmakla basılır)
+      el.quick.replaceChildren();
+      for (const [title, cls, pick] of [['Localar', 'loca', (b) => b.locaNo], ['Masalar', 'masa', (b) => b.kind === 'tables']]) {
+        const list = blocks.filter(pick);
+        if (!list.length) continue;
+        const wrap = document.createElement('div');
+        const h = document.createElement('h3');
+        h.textContent = title === 'Localar' ? `Localar (${list.length})` : `Masalar (${list.length})`;
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+        for (const b of list) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = cls;
+          btn.dataset.block = b.id;
+          btn.textContent = b.locaNo ?? b.id.replace('M', '');
+          btn.setAttribute('aria-label', b.name);
+          btn.addEventListener('click', () => handlers.onBlock(b.id));
+          grid.append(btn);
+        }
+        wrap.append(h, grid);
+        el.quick.append(wrap);
+      }
       el.mapHint.textContent = key === 'concert' ? '· sahne üstte' : '· saha ortada';
       el.infoCard.hidden = true;
       el.hud.hidden = true;
@@ -165,11 +196,44 @@ export function createUI({ config, model, handlers }) {
       });
     },
 
-    showSeat(seat, stats, block) {
+    /** Seçili blok çubuğu (koltuk seçilene kadar). */
+    setBlockBar(block, visible) {
+      el.bar.hidden = !visible || !block;
+      el.quick.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(!!block && b.dataset.block === block.id)));
+      if (!visible || !block) return;
+      el.bbTitle.textContent = blockLabel(block);
+      const cap = block.capacity ?? block.seatCount;
+      el.bbSub.textContent = block.style === 'standing' ? 'Ayakta alan · bir noktaya dokun' : `${cap} kişi · bir koltuğa dokun ya da`;
+    },
+    setCrowd(on) { el.crowd.setAttribute('aria-pressed', String(on)); },
+    setImmersive(on) {
+      document.body.classList.toggle('immersive', on);
+      el.imm.hidden = !on;
+    },
+
+    /** Blok seçildi (koltuk henüz değil): özet kart. */
+    showBlock(block, stats, note) {
+      el.infoCard.hidden = false;
+      el.infoTitle.textContent = blockLabel(block);
+      el.infoDot.style.background = safeColor(config.categories[block.category]?.color);
+      el.infoCat.textContent = catLabel(block.category);
+      const cap = block.capacity ?? block.seatCount;
+      el.infoStats.innerHTML = `
+        <div><dt>${block.locaNo ? 'Loca kapasitesi' : block.style === 'standing' ? 'Alan' : 'Koltuk sayısı'}</dt><dd>${block.style === 'standing' ? 'Ayakta' : `${cap} kişi`}</dd></div>
+        <div><dt>Zeminden yükseklik</dt><dd>${fmt(stats.height)} m</dd></div>
+        <div><dt>${esc(stats.focusLabel)} mesafesi</dt><dd>${fmt(stats.distance, 0)} m</dd></div>
+        <div><dt>Konum</dt><dd>${esc(stats.side)}</dd></div>`;
+      el.infoNote.textContent = note ?? '';
+      el.btnView.textContent = block.locaNo ? 'Locadan göster' : 'Bloktan göster';
+      quiet(() => { el.selBlock.value = block.id; });
+    },
+
+    showSeat(seat, stats, block, note) {
       if (!seat) { el.infoCard.hidden = true; return; }
       el.infoCard.hidden = false;
       const blockName = blockLabel(block);
-      el.infoTitle.textContent = `${blockName} · Sıra ${seat.rowLabel} · Koltuk ${seat.seatNo}`;
+      const unit = seat.style === 'standing' ? 'Nokta' : 'Koltuk';
+      el.infoTitle.textContent = `${blockName} · Sıra ${seat.rowLabel} · ${unit} ${seat.seatNo}`;
       el.infoDot.style.background = safeColor(config.categories[seat.category]?.color);
       el.infoCat.textContent = catLabel(seat.category);
       el.infoStats.innerHTML = `
@@ -177,6 +241,8 @@ export function createUI({ config, model, handlers }) {
         <div><dt>Zeminden yükseklik</dt><dd>${fmt(stats.height)} m</dd></div>
         <div><dt>Konum</dt><dd>${esc(stats.side)}</dd></div>
         <div><dt>Başı çevirme</dt><dd>${fmt(stats.angle, 0)}°</dd></div>`;
+      el.infoNote.textContent = note ?? '';
+      el.btnView.textContent = 'Koltuktan göster';
       quiet(() => {
         el.selBlock.value = block.id;
       });
@@ -187,7 +253,7 @@ export function createUI({ config, model, handlers }) {
       document.body.classList.toggle('seat-mode', visible);
       if (!visible || !seat) return;
       const blockName = blockLabel(block);
-      el.hudTitle.textContent = `${blockName} · Sıra ${seat.rowLabel} · Koltuk ${seat.seatNo}`;
+      el.hudTitle.textContent = `${blockName} · Sıra ${seat.rowLabel} · ${seat.style === 'standing' ? 'Nokta' : 'Koltuk'} ${seat.seatNo}`;
       el.hudSub.textContent = catLabel(seat.category);
       $('hudReset').textContent = `⟲ ${focusDative} bak`;
     },

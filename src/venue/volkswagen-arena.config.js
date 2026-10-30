@@ -15,13 +15,13 @@
 const SEAT = 0.46; // koltuk eni (m)
 
 // Etkinlik düzenleri (araştırma: konser oturmalı/ayakta, senfoni-film konseri, basketbol, gala-ödül-moda, e-spor)
-const ALL = ['concert', 'standing', 'symphony', 'basketball', 'gala', 'esports'];
+const ALL = ['concert', 'standing', 'symphony', 'basketball', 'gala', 'esports', 'ice']; // konferansta tribünler perdeyle kapatılır
 const STAGE_EVENTS = ['concert', 'standing', 'symphony', 'gala', 'esports'];
-const FLOOR_SEATED = ['concert', 'symphony', 'esports']; // zemin blokları 001–006 yalnızca bu düzenlerde
+const FLOOR_SEATED = ['concert', 'symphony', 'esports', 'conference']; // zemin blokları 001–006 yalnızca bu düzenlerde
 const ROW = 0.8; // tribün sıra derinliği (m)
-const RISE = 0.38; // tribün sıra yükselmesi (m)
-const BASE = 0.6; // ilk sıranın zeminden yüksekliği (m)
-const FLOOR_HALF = 15.5; // tribün ön hattı: zemin yarı genişliği (m)
+const RISE = 0.4; // tribün sıra yükselmesi (m): alt tribün 16 sıra, tepe ≈ +6,7 m (Arkitera kesiti: +57,60 → +64,28)
+const BASE = 0.3; // ilk sıranın zeminden yüksekliği (m)
+const FLOOR_HALF = 15.3; // Arkitera planı: zemin 30 m genişlik ("3000"), stage duvarından tribün ayağına 52 m ("5200") // tribün ön hattı: zemin yarı genişliği (m)
 
 /** Bir hat boyunca eşit aralıklı blok merkezleri (yanal koordinat). */
 function evenCenters(count, blockWidth, span) {
@@ -29,8 +29,8 @@ function evenCenters(count, blockWidth, span) {
   return Array.from({ length: count }, (_, i) => -span / 2 + blockWidth / 2 + i * (blockWidth + gap));
 }
 
-const SIDE_SEATS = 14; // Biletix planındaki en geniş yan blok sırası: 14 koltuk
-const sideCenters = evenCenters(5, SIDE_SEATS * SEAT, 40);
+const SIDE_SEATS = 12; // yan blok sıra başına koltuk (Biletix en geniş: 14; toplam kapasiteyi resmî 4.500–5.800 aralığında tutmak için 12)
+const sideCenters = evenCenters(5, SIDE_SEATS * SEAT, 41);
 const ROW_LETTERS = 'ABCDEFGHIJKLMNOPRSTU'; // planda zemin blokları A…U → 20 sıra (6×18×20 = 2160)
 
 export default {
@@ -63,28 +63,30 @@ export default {
   },
 
   hall: {
-    floor: { halfWidth: FLOOR_HALF, zMin: -28, zMax: 26 },
+    // Ölçüler Arkitera mimari projesinden (plan + A-A/B-B kesitleri) okundu: zemin kotu +57,60, alt tribün tepesi +64,28,
+    // loca zemini +68,50, çatı alt başlığı ≈ +73,0, çatı üstü +76,55. Plan ölçeği "3000 × 5200 / 2700 × 1800" ölçülerinden.
+    floor: { halfWidth: FLOOR_HALF, zMin: -29, zMax: 22 },
     ring: {
-      frontX: 26.3, // yan loca hattı (|x|)
-      endFrontZ: 36.0, // karşı uç loca hattı
-      chamferStartZ: 24.7, // yan hattın bittiği, köşe pahının başladığı z
+      frontX: 22.6, // yan loca ön hattı (|x|); localar alt tribünün arka sıraları üzerine taşar
+      endFrontZ: 29.7, // karşı uç loca ön hattı
+      chamferStartZ: 24.1, // yan hattın bittiği, 45° köşe pahının başladığı z
       wingZ: -21.0, // yan hattın sahne ucundaki başlangıcı
       stageWallZ: -29.0,
-      depth: 5.2, // loca derinliği
-      floorY: 5.0, // loca zemin kotu
-      ceilingY: 9.4,
-      locaWidth: 5.0,
+      depth: 4.2, // loca derinliği
+      corridor: 1.5, // loca arkası koridor
+      floorY: 10.9, // loca zemini (+68,50 − 57,60)
+      ceilingY: 14.0,
+      locaWidth: 5.2,
+      endLocaWidth: 5.7,
       sideLocas: 8,
       endLocas: 6,
-      cornerSegments: 7, // köşe yaylarının dilim sayısı (referans fotoğraflarda salon yuvarlak köşeli)
+      cornerSegments: 1, // plan: köşeler 45° pah (tek açılı loca)
     },
-    roof: { springY: 9.4, apexY: 21.5, halfSpan: 32.2, zMin: -29, zMax: 41.6, ribCount: 13 },
-    estimated: true,
+    // Çatı: 54–58 m açıklıklı, ≈3 m derin, neredeyse düz çelik makas (bombeli: kenar 18,4 → orta 19,0)
+    roof: { springY: 18.4, apexY: 19.0, trussDepth: 3.0, halfSpan: 29.4, zMin: -29, zMax: 36.4, ribCount: 14 },
+    estimated: false,
   },
 
-  // Etkinlik düzenleri. Araştırma (2026): konserler (pop/rock/metal; oturmalı ≈4.500, saha ayakta ≈6.500), senfoni ve film konseri
-  // (Harry Potter In Concert, "Adamlar – An Epic Symphony", Fazıl Say Nazım Oratoryosu), basketbol (Darüşşafaka, 5.240),
-  // e-spor (VALORANT Champions İstanbul), ödül/moda/gala (Men of the Year), konferans ve stand-up. Kaynaklar docs/etkinlikler.md.
   configurations: {
     concert: {
       label: 'Konser · oturmalı',
@@ -95,8 +97,9 @@ export default {
       focus: [0, 3.4, -23], // koltuktan bakılan nokta (sahne ortası)
       focusLabel: 'Sahne',
       focusDative: 'Sahneye',
-      overview: { position: [0, 15.5, 37], target: [0, 3, -8] },
+      overview: { position: [0, 13.6, 26.5], target: [0, 2.5, -9] },
       stage: { width: 16, depth: 10, height: 1.5, z0: -28 }, // 160 m², 1,5 m (vwarena.com)
+      locaNote: 'Localar 12 veya 16 kişilik; loca kapısından hızlı giriş, VIP giriş + vale, asansörle loca katı, Volkswagen Lounge hakkı. Satış etkinliğe göre değişir.',
       note: 'Tam oturmalı konser: zemin blokları 001–006 + tribünler + localar (resmî ≈4.500–5.000).',
     },
     standing: {
@@ -108,8 +111,10 @@ export default {
       focus: [0, 3.4, -23],
       focusLabel: 'Sahne',
       focusDative: 'Sahneye',
-      overview: { position: [0, 15.5, 37], target: [0, 3, -8] },
+      overview: { position: [0, 13.6, 26.5], target: [0, 2.5, -9] },
       stage: { width: 16, depth: 10, height: 1.5, z0: -28 },
+      crowd: true,
+      locaNote: 'Zemin ayakta olsa da localar oturmalıdır (12/16 kişilik); loca satışı etkinliğe göre değişir.',
       note: 'Zemin ayakta (Golden Circle + saha içi), tribünler ve localar oturmalı (resmî ≈6.500).',
     },
     symphony: {
@@ -121,8 +126,9 @@ export default {
       focus: [0, 3.2, -22],
       focusLabel: 'Orkestra',
       focusDative: 'Orkestraya',
-      overview: { position: [0, 15.5, 37], target: [0, 3, -8] },
+      overview: { position: [0, 13.6, 26.5], target: [0, 2.5, -9] },
       stage: { width: 20, depth: 12, height: 1.2, z0: -28 },
+      locaNote: 'Senfoni ve film konserlerinde localar oturmalı satılır (12/16 kişilik); catering istek üzerine.',
       note: 'Orkestra sahnesi + dev perde; tam oturmalı (ör. film konseri, senfoni gecesi).',
     },
     basketball: {
@@ -134,8 +140,10 @@ export default {
       focus: [0, 1.4, 0], // saha ortası
       focusLabel: 'Saha',
       focusDative: 'Sahaya',
-      overview: { position: [0, 14.5, 34], target: [0, 2, 0] },
+      overview: { position: [0, 13.2, 26.5], target: [0, 2, 0] },
       court: { length: 28, width: 15, centerZ: 0 }, // FIBA ölçüsü
+      crowd: true,
+      locaNote: 'Basketbolda localar sezonluk / maç bazlı kiralanır (12/16 kişilik); Darüşşafaka maçları için satış kulüp ve Pozitif üzerinden.',
       note: 'Saha ortada; saha içi bloklar yok. Yan ve uç ek tribünler, saha kenarı VIP (resmî 5.240).',
     },
     gala: {
@@ -147,8 +155,10 @@ export default {
       focus: [0, 2.4, -20],
       focusLabel: 'Podyum',
       focusDative: 'Podyuma',
-      overview: { position: [0, 15.5, 37], target: [0, 3, -6] },
+      overview: { position: [0, 13.6, 26.5], target: [0, 2.5, -8] },
       stage: { width: 24, depth: 8, height: 1.0, z0: -28 },
+      crowd: true,
+      locaNote: 'Resmî sayfa: bazı özel yapılandırılmış etkinliklerde loca konukları biletle değil DAVETİYE ile alınır; gala/ödül/defilede loca genelde davetli konuklara ayrılır.',
       note: '24 yuvarlak masa (10 sandalye), merkez podyum (runway), dev LED perde; tribün ve localar açık.',
     },
     esports: {
@@ -160,9 +170,39 @@ export default {
       focus: [0, 3.2, -23],
       focusLabel: 'Sahne',
       focusDative: 'Sahneye',
-      overview: { position: [0, 15.5, 37], target: [0, 3, -8] },
+      overview: { position: [0, 13.6, 26.5], target: [0, 2.5, -9] },
       stage: { width: 22, depth: 10, height: 1.2, z0: -28 },
+      locaNote: 'E-spor finallerinde localar organizatör (yayıncı/turnuva) tarafından satılır ya da ağırlanır; kapasite 12/16 kişi.',
       note: 'Takım masaları sahnede, dev LED duvar ve asma ekranlar; zemin oturmalı (ör. VALORANT Champions).',
+    },
+    ice: {
+      label: 'Buz gösterisi',
+      short: 'Buz',
+      kind: 'ice',
+      lighting: 'ice',
+      floorMat: 'floorIce',
+      crowd: true,
+      focus: [0, 0.6, -4],
+      focusLabel: 'Buz pisti',
+      focusDative: 'Buz pistine',
+      overview: { position: [0, 13.6, 26.5], target: [0, 1.5, -4] },
+      rink: { width: 22, length: 44, centerZ: -4 },
+      note: 'Zemin buz pistine dönüşür (ör. "Ice Age Live", 2015); izleyici tribün ve localarda. Pist ölçüsü tahmini.',
+      locaNote: 'Aile gösterilerinde localar genelde grup/kurumsal satılır (12/16 kişilik); satış etkinliğe göre değişir.',
+    },
+    conference: {
+      label: 'Konferans · kurumsal',
+      short: 'Konferans',
+      kind: 'conference',
+      lighting: 'conference',
+      floorMat: 'floorConcert',
+      focus: [0, 2.6, -23],
+      focusLabel: 'Kürsü',
+      focusDative: 'Kürsüye',
+      overview: { position: [0, 10.5, 17.5], target: [0, 2.5, -14] },
+      stage: { width: 20, depth: 8, height: 0.8, z0: -28 },
+      note: 'Tiyatro düzeni (zemin blokları), mavi LED ekranlar; salon perdeyle küçültülür, tribünler kapalı (Arkitera: "perde ile salon küçültme").',
+      locaNote: 'Kurumsal etkinliklerde localar konuk ağırlamak için kullanılır; yemek/içecek loca katında (Volkswagen Lounge) sunulur.',
     },
   },
 
@@ -189,10 +229,10 @@ export default {
       kind: 'flat',
       configs: FLOOR_SEATED,
       group: 'Sahne Önü',
-      origin: [0, -13],
+      origin: [0, -15.4],
       facing: [0, -1],
       rows: 20,
-      rowPitch: 0.85,
+      rowPitch: 0.8,
       rowLabels: ROW_LETTERS,
       blocks: [
         { id: '001', name: 'Sahne Önü Oturmalı 001', lateral: -10.3, seats: 18, category: 'sahne-onu' },
@@ -205,10 +245,10 @@ export default {
       kind: 'flat',
       configs: FLOOR_SEATED,
       group: 'Saha İçi',
-      origin: [0, 6.5],
+      origin: [0, 3.0],
       facing: [0, -1],
       rows: 20,
-      rowPitch: 0.85,
+      rowPitch: 0.8,
       rowLabels: ROW_LETTERS,
       blocks: [
         { id: '004', name: 'Saha İçi 004', lateral: -10.3, seats: 18, category: 'saha-ici' },
@@ -223,7 +263,7 @@ export default {
       kind: 'flat',
       configs: ['standing'],
       group: 'Sahne Önü Ayakta',
-      origin: [0, -12.4],
+      origin: [0, -15.6],
       facing: [0, -1],
       rows: 9,
       rowPitch: 0.9,
@@ -236,7 +276,7 @@ export default {
       kind: 'flat',
       configs: ['standing'],
       group: 'Saha İçi Ayakta',
-      origin: [0, -3.2],
+      origin: [0, -7.0],
       facing: [0, -1],
       rows: 28,
       rowPitch: 0.9,
@@ -255,7 +295,7 @@ export default {
       radius: 1.18,
       tables: Array.from({ length: 24 }, (_, i) => {
         const col = i % 4, row = Math.floor(i / 4);
-        return { id: `M${i + 1}`, name: `Masa ${i + 1}`, center: [-10.8 + col * 7.2, -4.5 + row * 5.3], seats: 10 };
+        return { id: `M${i + 1}`, name: `Masa ${i + 1}`, center: [-10.8 + col * 7.2, -9.4 + row * 5.0], seats: 10 };
       }),
     },
     {
@@ -263,13 +303,13 @@ export default {
       kind: 'rake',
       configs: ALL,
       group: 'Yan Tribün (sol)',
-      origin: [-16, 0],
+      origin: [-15.6, 0],
       facing: [1, 0],
-      rows: 12,
+      rows: 16,
       rowPitch: ROW,
       rise: RISE,
       baseY: BASE,
-      span: [-20.4, 20.4],
+      span: [-21.5, 21.5],
       blocks: ['202', '203', '204', '205', '206'].map((id, i) => ({
         id,
         name: `Tribün ${id}`,
@@ -283,13 +323,13 @@ export default {
       kind: 'rake',
       configs: ALL,
       group: 'Yan Tribün (sağ)',
-      origin: [16, 0],
+      origin: [15.6, 0],
       facing: [-1, 0],
-      rows: 12,
+      rows: 16,
       rowPitch: ROW,
       rise: RISE,
       baseY: BASE,
-      span: [-20.4, 20.4],
+      span: [-21.5, 21.5],
       blocks: ['212', '213', '214', '215', '216'].map((id, i) => ({
         id,
         name: `Tribün ${id}`,
@@ -303,9 +343,9 @@ export default {
       kind: 'rake',
       configs: ALL,
       group: 'Yan Tribün (sol)',
-      origin: [-16, -23.4],
+      origin: [-15.6, -23.4],
       facing: [1, 0],
-      rows: 3,
+      rows: 16,
       rowPitch: ROW,
       rise: RISE,
       baseY: BASE,
@@ -317,9 +357,9 @@ export default {
       kind: 'rake',
       configs: ALL,
       group: 'Yan Tribün (sağ)',
-      origin: [16, -23.4],
+      origin: [15.6, -23.4],
       facing: [-1, 0],
-      rows: 3,
+      rows: 16,
       rowPitch: ROW,
       rise: RISE,
       baseY: BASE,
@@ -331,11 +371,11 @@ export default {
       kind: 'rake',
       configs: ALL,
       group: 'Karşı Tribün',
-      origin: [0, 26.5],
+      origin: [0, 22.4],
       facing: [0, -1],
-      rows: 12,
-      rowPitch: ROW,
-      rise: RISE,
+      rows: 13,
+      rowPitch: 0.85,
+      rise: 0.32,
       baseY: BASE,
       span: [-15.4, 15.4],
       blocks: [
@@ -350,12 +390,12 @@ export default {
       kind: 'fan',
       configs: ALL,
       group: 'Karşı Tribün',
-      center: [-FLOOR_HALF, 26],
+      center: [-FLOOR_HALF, 21.9],
       angles: [98, 172], // derece, (x,z) düzleminde +x'ten +z'ye
-      r0: 1.2,
-      rows: 7,
-      rowPitch: ROW,
-      rise: RISE,
+      r0: 1.4,
+      rows: 13,
+      rowPitch: 0.85,
+      rise: 0.32,
       baseY: BASE,
       blocks: [{ id: '207', name: 'Tribün 207', category: 'tribun-karsi' }],
     },
@@ -364,12 +404,12 @@ export default {
       kind: 'fan',
       configs: ALL,
       group: 'Karşı Tribün',
-      center: [FLOOR_HALF, 26],
+      center: [FLOOR_HALF, 21.9],
       angles: [8, 82],
-      r0: 1.2,
-      rows: 7,
-      rowPitch: ROW,
-      rise: RISE,
+      r0: 1.4,
+      rows: 13,
+      rowPitch: 0.85,
+      rise: 0.32,
       baseY: BASE,
       blocks: [{ id: '211', name: 'Tribün 211', category: 'tribun-karsi' }],
     },
@@ -461,12 +501,17 @@ export default {
 
   // 24 loca (Biletix: LOCA 1–8 sol üstten aşağı, 9 sol köşe, 10–15 karşı uç, 16 sağ köşe, 17–24 sağ alttan yukarı).
   // Her loca planda iki karo → 2 sıra × 5 koltuk = 10 koltuk (Vikipedi: 24 loca / 240 koltuk).
+  // 24 loca. Resmî loca kiralama sayfası: "12 ya da 16 kişilik"; Arkiv: 304 skybox koltuğu = 20 × 12 + 4 × 16.
+  // 16 kişilik 4 locanın hangileri olduğu belli değil: karşı uçtaki (daha geniş) orta dört loca varsayıldı.
+  // Plan (+68,50 kotu): her loca iki sıra koltuk (ön sıra alçak, arka sıra bir basamak yüksekte) + arkada ayakta/bar alanı.
   locas: {
     rows: 2,
-    seatsPerRow: 5,
-    seatSpacing: 0.9,
-    rowDepth: [0.95, 1.85],
-    rowRise: 0.3,
+    seatsPerRow: 6,
+    bigSeatsPerRow: 8,
+    bigLocas: [11, 12, 13, 14],
+    rowDepth: [0.95, 1.9],
+    rowRise: 0.32,
     category: 'loca',
   },
+
 };

@@ -29,6 +29,7 @@ const land = async () => {
 
 const configs = await page.evaluate(() => Object.keys(window.__arena.config.configurations));
 const tested = new Set();
+const blocksDone = new Set();
 let checked = 0;
 for (const cfg of configs) {
   await page.evaluate((c) => window.__arena.applyConfig(c, { fly: false }), cfg);
@@ -43,6 +44,8 @@ for (const cfg of configs) {
       const last = window.__arena.model.seats[lastRow.seats[lastRow.seats.length - 1]];
       return [first.id, last.id];
     }, id);
+    if (blocksDone.has(id) && !id.startsWith('0')) continue; // ortak bloklar tek kez (zemin blokları her düzende denenir)
+    blocksDone.add(id);
     // blok seçimi (kamera karşıdan bakış) da denenir
     await page.evaluate((bid) => window.__arena.selectBlock(bid), id);
     await land();
@@ -80,6 +83,28 @@ for (const [key, want] of [['ArrowRight', '204-6-8'], ['ArrowLeft', '204-6-7'], 
 await page.keyboard.press('Escape');
 await land();
 if ((await page.evaluate(() => window.__arena.state.view)) !== 'overview') problems.push('Esc genel görünüme dönmedi');
+
+// hızlı seçim düğmesi + blok çubuğu + sinema modu
+await page.evaluate(() => window.__arena.applyConfig('concert', { fly: false }));
+await page.click('#quick button[data-block="L12"]');
+await land();
+if ((await page.evaluate(() => window.__arena.state.block?.id)) !== 'L12') problems.push('hızlı seçim L12 çalışmadı');
+if (await page.evaluate(() => document.getElementById('blockBar').hidden)) problems.push('blok çubuğu görünmüyor');
+await page.click('#bbGo');
+await land();
+if ((await page.evaluate(() => window.__arena.state.view)) !== 'seat') problems.push('"Buradan göster" koltuk görünümüne geçmedi');
+await page.evaluate(() => window.__arena.exitSeat(false));
+await page.click('#btnFs');
+if (!(await page.evaluate(() => document.body.classList.contains('immersive')))) problems.push('sinema modu açılmadı');
+await page.click('#btnImm');
+if (await page.evaluate(() => document.body.classList.contains('immersive'))) problems.push('sinema modundan çıkılamadı');
+// kamera sınırları: aşırı konumlar
+const lim = await page.evaluate(() => {
+  const a = window.__arena; const out = [];
+  for (const p of [[0, -20, 0], [90, 60, 90], [-60, 3, -60], [0, 40, 0]]) { a.camera.position.set(...p); a.rig.mode = 'orbit'; a.rig.update(0.016); out.push(a.camera.position.toArray()); }
+  return out;
+});
+for (const p of lim) if (Math.abs(p[0]) > 23 || p[1] < 0 || p[1] > 16 || p[2] < -29 || p[2] > 30) problems.push(`kamera sınır dışında: ${p.map((v) => v.toFixed(1))}`);
 
 // kategori boyası / bilgi penceresi
 await page.click('#btnTint');

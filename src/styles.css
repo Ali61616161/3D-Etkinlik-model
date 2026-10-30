@@ -224,3 +224,36 @@ dialog .primary { margin-top: 16px; }
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 3s; }
 }
+
+/* sinema (tam ekran) modu: arayüz gizlenir, yalnızca çıkış düğmesi ve koltuk gezinme kalır */
+.imm { position: absolute; z-index: 9; top: max(12px, env(safe-area-inset-top, 0px)); right: 12px; width: 44px; height: 44px; font-size: 18px; }
+body.immersive #topbar, body.immersive #panel { display: none; }
+body.immersive .imm:not([hidden]) { display: inline-flex; align-items: center; justify-content: center; }
+@media (max-width: 860px) { .chip#btnCrowd { display: none; } }
+
+/* hızlı seçim (loca / masa numaraları): parmakla kolay basılır */
+.quick { display: flex; flex-direction: column; gap: 10px; margin: 2px 0 10px; }
+.quick:empty { display: none; }
+.quick h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: 0.9px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.quick .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px; }
+.quick button {
+  min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05); font-weight: 700;
+}
+.quick button.loca { border-color: rgba(192, 132, 252, 0.55); background: rgba(192, 132, 252, 0.12); }
+.quick button.masa { border-color: rgba(250, 204, 21, 0.5); background: rgba(250, 204, 21, 0.1); }
+.quick button[aria-pressed='true'] { background: var(--accent); color: #05131c; border-color: var(--accent); }
+
+/* seçili blok çubuğu: blok seçildi, koltuk henüz değil */
+#blockBar {
+  position: absolute; z-index: 5; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(480px, calc(100% - 2 * var(--gutter)));
+  display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+}
+#blockBar[hidden] { display: none; }
+.bb-text { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.2; }
+.bb-text b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-text small { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#blockBar .primary { width: auto; padding: 10px 16px; border-radius: 999px; white-space: nowrap; }
+#blockBar #bbClose { border: 0; width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); }
+@media (max-width: 860px) { #blockBar { bottom: 64px; } body.seat-mode #blockBar { display: none; } }
+body.immersive #blockBar { bottom: 20px; }

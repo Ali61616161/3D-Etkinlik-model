@@ -71,9 +71,9 @@ test('koltuklar aynı düzende üst üste binmez (≥ 0,30 m)', () => {
 test('koltuklar salon sınırları içinde', () => {
   const r = config.hall.ring, roof = config.hall.roof;
   for (const s of model.seats) {
-    assert.ok(Math.abs(s.pos[0]) < r.frontX + r.depth, `${s.id}: x dışarıda`);
+    assert.ok(Math.abs(s.pos[0]) < r.frontX + r.depth + r.corridor, `${s.id}: x dışarıda`);
     assert.ok(s.pos[2] > roof.zMin && s.pos[2] < roof.zMax, `${s.id}: z dışarıda`);
-    assert.ok(s.eye[1] > 0.5 && s.eye[1] < roof.springY, `${s.id}: göz yüksekliği garip (${s.eye[1]})`);
+    assert.ok(s.eye[1] > 0.5 && s.eye[1] < roof.springY - roof.trussDepth, `${s.id}: göz yüksekliği garip (${s.eye[1]})`);
   }
 });
 
@@ -90,10 +90,10 @@ test('eğimli tribünlerde sıra arkaya gittikçe yükselir', () => {
 test('resmî rakamlarla uyum', () => {
   const count = (pred) => model.seats.filter(pred).length;
   assert.equal(count((s) => s.category === 'sahne-onu' || s.category === 'saha-ici'), 2160, 'zemin oturmalı 6×18×20');
-  assert.equal(count((s) => s.category === 'loca'), 240, '24 loca × 10');
+  assert.equal(count((s) => s.category === 'loca'), 304, '20 loca × 12 + 4 loca × 16 (Arkiv: 304 skybox koltuğu)');
   assert.equal(ringLayout(config).locas.length, 24);
   const concert = seatsForConfig(model, 'concert').length;
-  assert.ok(concert > 4500 && concert < 5300, `konser tam oturmalı ≈ 5.000 (model: ${concert})`);
+  assert.ok(concert > 4500 && concert < 5800, `konser tam oturmalı 4.500–5.800 (model: ${concert})`);
   const tele = count((s) => s.blockId.startsWith('T'));
   assert.ok(Math.abs(tele - 562) <= 5, `ek tribün ≈ 562 (model: ${tele})`);
   assert.equal(count((s) => s.category === 'vip'), 88, '88 saha kenarı VIP');
@@ -134,11 +134,11 @@ test('seçici: koltuk merkezine bakan ışın o koltuğu bulur', () => {
   }
 });
 
-test('etkinlik düzenleri: her düzenin sahnesi/sahası, odağı ve kamerası tanımlı', () => {
+test('etkinlik düzenleri: her düzenin sahnesi/sahası/pisti, odağı ve kamerası tanımlı', () => {
   for (const [id, c] of Object.entries(config.configurations)) {
     assert.ok(c.label && c.kind && c.lighting && c.floorMat, `${id}: eksik alan`);
     assert.ok(c.focus.length === 3 && c.overview.position.length === 3 && c.overview.target.length === 3, `${id}: kamera`);
-    assert.ok(c.stage || c.court, `${id}: sahne veya saha yok`);
+    assert.ok(c.stage || c.court || c.rink, `${id}: sahne, saha veya pist yok`);
     assert.ok(seatsForConfig(model, id).length > 1000, `${id}: koltuk çok az`);
   }
 });
@@ -150,7 +150,7 @@ test('ayakta konser: koltuk yok, yalnızca bakış noktaları; tribün ve locala
   assert.ok(!list.some((s) => s.category === 'sahne-onu' || s.category === 'saha-ici'), 'zemin blokları ayakta düzende olmamalı');
   const st = list.find((s) => s.noMesh);
   assert.ok(Math.abs(st.eye[1] - 1.68) < 1e-6, 'ayakta göz yüksekliği 1,68 m');
-  assert.equal(seatsForConfig(model, 'standing').filter((s) => s.category === 'loca').length, 240);
+  assert.equal(seatsForConfig(model, 'standing').filter((s) => s.category === 'loca').length, 304);
 });
 
 test('gala: 24 masa × 10 sandalye, masaya bakar', () => {
@@ -192,4 +192,34 @@ test('zemin yüksekliği: yan tribünde sıra sıra yükselir, zeminde 0', () =>
   assert.equal(g(0, 0), 0);
   assert.ok(g(17, 0) > 0.5 && g(24, 0) > g(18, 0), 'yan tribün yükselmiyor');
   assert.ok(g(0, 33) > g(0, 28), 'karşı tribün yükselmiyor');
+});
+
+test('blok seçici: salon ortasından her locaya ve her bloğa dokunma o bloğu bulur', () => {
+  const picker = new SeatPicker(model);
+  for (const cfg of configs) {
+    picker.setConfig(cfg);
+    let miss = 0, total = 0;
+    for (const block of new Set(picker.list.map((s) => model.blocks.get(s.blockId)))) {
+      const c = new THREE.Vector3(...block.center);
+      c.y += block.locaNo ? 0.6 : 0.4;
+      // kamera: salon ortasında, 11 m yukarıda (blok görünümü öncesi tipik genel bakış)
+      const origin = new THREE.Vector3(0, block.locaNo ? 9 : 14, block.kind === 'flat' || block.kind === 'tables' ? 26 : 0);
+      const ray = new THREE.Ray(origin, c.clone().sub(origin).normalize());
+      const hit = picker.pickBlock(ray);
+      total++;
+      if (!hit || hit.block.id !== block.id) miss++;
+    }
+    assert.ok(miss / total < 0.12, `${cfg}: ${miss}/${total} blok yanlış seçildi`);
+  }
+});
+
+test('blok içinde koltuk seçimi: koltuk merkezine yakın ışın o koltuğu bulur', () => {
+  const picker = new SeatPicker(model);
+  picker.setConfig('concert');
+  const block = model.blocks.get('204');
+  const s = model.seats[block.rows[5].seats[6]];
+  const origin = new THREE.Vector3(s.pos[0] - 12, s.pos[1] + 9, s.pos[2] + 0.3);
+  const target = new THREE.Vector3(s.pos[0], s.pos[1] + 0.5, s.pos[2]);
+  const hit = picker.pickSeatInBlock(new THREE.Ray(origin, target.sub(origin).normalize()), block);
+  assert.ok(hit && Math.hypot(hit.pos[0] - s.pos[0], hit.pos[2] - s.pos[2]) < 0.6);
 });

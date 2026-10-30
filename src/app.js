@@ -12,15 +12,16 @@ import { createVenue } from './engine/venue.js';
 import { CameraRig } from './engine/cameraRig.js';
 import { SeatPicker } from './engine/picker.js';
 import { Markers } from './engine/markers.js';
+import { Crowd } from './engine/crowd.js';
 import { createUI } from './ui/ui.js';
 import { Minimap } from './ui/minimap.js';
 
 const QUALITY = {
-  high: { label: 'Yüksek', shadows: true, shadowMap: 4096, pixelRatio: 2, bloom: true, antialias: true, seatDetail: 'high' },
-  medium: { label: 'Orta', shadows: true, shadowMap: 2048, pixelRatio: 1.5, bloom: false, antialias: true, seatDetail: 'mid' },
-  low: { label: 'Düşük', shadows: false, shadowMap: 1024, pixelRatio: 1.5, bloom: false, antialias: true, seatDetail: 'low' },
+  high: { label: 'Yüksek', shadows: true, shadowMap: 4096, pixelRatio: 2, bloom: true, antialias: true, seatDetail: 'high', seatNear: 22 },
+  medium: { label: 'Orta', shadows: true, shadowMap: 2048, pixelRatio: 1.5, bloom: false, antialias: true, seatDetail: 'mid', seatNear: 16 },
+  low: { label: 'Düşük', shadows: false, shadowMap: 1024, pixelRatio: 1.5, bloom: false, antialias: true, seatDetail: 'low', seatNear: 12 },
   // Telefon: yüksek yoğunluklu ekranda piksellenmeyi önlemek için 2× çözünürlük, hafif koltuk, tek seferlik gölge
-  mobile: { label: 'Mobil', shadows: true, shadowMap: 1024, pixelRatio: 2, bloom: false, antialias: true, seatDetail: 'low' },
+  mobile: { label: 'Mobil', shadows: true, shadowMap: 1024, pixelRatio: 2, bloom: false, antialias: true, seatDetail: 'low', seatNear: 12 },
 };
 const QUALITY_ORDER = ['auto', 'high', 'medium', 'low'];
 
@@ -28,7 +29,7 @@ function resolveQuality() {
   const url = new URLSearchParams(location.search).get('q');
   let pref = url;
   try { pref = pref || localStorage.getItem('arena.quality'); } catch { /* özel pencere */ }
-  if (!QUALITY_ORDER.includes(pref)) pref = 'auto';
+  if (!QUALITY_ORDER.includes(pref) && pref !== 'mobile') pref = 'auto';
   let key = pref;
   if (pref === 'auto') {
     const mobile = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 700;
@@ -85,7 +86,10 @@ export async function startApp() {
       onBlock: (id) => selectBlock(id),
       onRow: (i) => onRow(i),
       onSeat: (s) => s && selectSeat(s),
-      onView: () => state.seat && selectSeat(state.seat),
+      onView: () => (state.seat ? selectSeat(state.seat) : state.block && selectSeat(middleSeat(state.block))),
+      onFullscreen: () => toggleFullscreen(),
+      onClearBlock: () => clearBlock(),
+      onCrowd: (on) => setCrowd(on),
       onTint: (on) => { state.tint = on; refreshColors(); },
       onQuality: () => cycleQuality(),
       onStep: (ds, dr) => step(ds, dr),
@@ -101,6 +105,7 @@ export async function startApp() {
   const picker = new SeatPicker(model);
   const ownMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0.02, color: venue.seatVis.styleColor('standard') });
   const markers = new Markers(scene, venue.seatVis.geometry, ownMat);
+  const crowd = new Crowd({ model, config, quality, scene });
   const rig = new CameraRig(camera, canvas);
   const groundHeight = makeGroundHeight(config);
   rig.bounds = makeCameraBounds(config, groundHeight); // yerin altına / çatının üstüne / duvar dışına çıkılamaz
@@ -132,7 +137,8 @@ export async function startApp() {
     composer.addPass(new OutputPass());
   }
 
-  const state = { cfg: 'concert', seat: null, block: null, tint: false, view: 'overview' };
+  const state = { cfg: 'concert', seat: null, block: null, tint: false, view: 'overview', crowd: false, immersive: false };
+  const crowdChoice = {}; // düzen başına kullanıcı tercihi
   const blockOf = (s) => model.blocks.get(s.blockId);
   const cfgOf = () => config.configurations[state.cfg];
   const seatText = (s) => `${blockLabel(blockOf(s))} · Sıra ${s.rowLabel} · ${s.style === 'standing' ? 'Nokta' : 'Koltuk'} ${s.seatNo}`;
@@ -156,6 +162,7 @@ export async function startApp() {
     state.block = null;
     state.view = 'overview';
     setOwnSeat(null);
+    ui.setBlockBar(null, false);
     venue.setConfig(key);
     picker.setConfig(key);
     minimap.setConfig(key);
@@ -163,6 +170,7 @@ export async function startApp() {
     markers.setBeamAllowed(true);
     ui.setConfig(key, blocksForConfig(model, key));
     if (!matchMedia('(max-width: 860px)').matches) document.getElementById('panel').classList.add('open');
+    syncCrowd();
     refreshColors();
     invalidateShadows();
     const ov = cfgOf().overview;
@@ -213,11 +221,38 @@ export async function startApp() {
     minimap.setSelected(null);
     minimap.setBlock(id);
     ui.setBlock(block);
-    ui.showSeat(null);
+    ui.showBlock(block, statsFor({ pos: block.center, facing: block.facing, style: block.style }), blockNote(block));
+    ui.setBlockBar(block, true);
     refreshColors();
     const pose = blockViewPose(block);
     rig.flyToOrbit(pose.position, pose.target, { duration: 1.4 });
     if (hint) ui.toast(`${blockName(block)} · bir koltuğa dokun`, 2600);
+  }
+
+  function clearBlock() {
+    state.block = null;
+    state.seat = null;
+    markers.setSelected(null);
+    minimap.setSelected(null);
+    minimap.setBlock(null);
+    ui.setBlock(null);
+    ui.showSeat(null);
+    ui.setBlockBar(null, false);
+    refreshColors();
+    const ov = cfgOf().overview;
+    rig.flyToOrbit(ov.position, ov.target, { duration: 1.2 });
+  }
+
+  const middleSeat = (block) => {
+    const row = block.rows[Math.floor(block.rows.length / 2)];
+    return model.seats[row.seats[Math.floor(row.seats.length / 2)]];
+  };
+
+  /** Etkinliğe özel bilgi notu (loca satış politikası vb.). */
+  function blockNote(block) {
+    if (block.locaNo) return cfgOf().locaNote ?? '';
+    if (block.style === 'standing') return 'Ayakta alan: koltuk numarası yok; seçilen nokta bir bakış noktasıdır (göz ≈ 1,68 m).';
+    return '';
   }
 
   /**
@@ -256,7 +291,7 @@ export async function startApp() {
       focusLabel: cfgOf().focusLabel,
       distance: Math.hypot(dx, dy, dz),
       height: seat.pos[1],
-      side: blockOf(seat).group,
+      side: (seat.blockId ? blockOf(seat) : state.block)?.group ?? '',
       angle: (Math.acos(Math.min(1, Math.max(-1, dot))) * 180) / Math.PI,
     };
   }
@@ -267,15 +302,17 @@ export async function startApp() {
     ownSeat = seat;
     if (seat) venue.seatVis.setSeatHidden(seat, true);
     markers.setOwn(seat && !seat.noMesh ? seat : null);
+    crowd.hideAt(seat);
   }
 
   function selectSeat(seat, { fly = true, keepLook = false } = {}) {
     const block = blockOf(seat);
     if (fly) state.view = 'seat';
     state.seat = seat;
+    ui.setBlockBar(null, false);
     state.block = block;
     ui.setBlock(block, seat.rowIndex, seat);
-    ui.showSeat(seat, statsFor(seat), block);
+    ui.showSeat(seat, statsFor(seat), block, blockNote(block));
     markers.setSelected(seat);
     minimap.setSelected(seat);
     minimap.setBlock(block.id);
@@ -301,6 +338,7 @@ export async function startApp() {
     ui.setHud(null, null, false);
     markers.setBeamAllowed(true);
     if (!matchMedia('(max-width: 860px)').matches) document.getElementById('panel').classList.add('open');
+    if (state.block && !state.seat) ui.setBlockBar(state.block, true);
     if (fly) {
       const ov = cfgOf().overview;
       rig.flyToOrbit(ov.position, ov.target, { duration: 1.7 });
@@ -336,6 +374,50 @@ export async function startApp() {
     rig.lookAt(cfgOf().focus);
   }
 
+  // ── seyirci kalabalığı ──
+  function crowdWanted() {
+    if (state.cfg in crowdChoice) return crowdChoice[state.cfg];
+    // varsayılan: ayakta, gala ve basketbolda açık; hafif cihazda (mobil/düşük) kapalı
+    return !!cfgOf().crowd && qKey !== 'low' && qKey !== 'mobile';
+  }
+  function syncCrowd() {
+    state.crowd = crowdWanted();
+    crowd.setConfig(state.cfg, state.crowd);
+    crowd.hideAt(state.view === 'seat' ? state.seat : null);
+    ui.setCrowd(state.crowd);
+  }
+  function setCrowd(on) {
+    crowdChoice[state.cfg] = on;
+    syncCrowd();
+  }
+
+  // ── tam ekran / sinema modu ──
+  // Gerçek tam ekran çoğu telefonda (iOS Safari) ve gömülü sayfalarda yoktur; bu yüzden her durumda "sinema modu"
+  // açılır: arayüz gizlenir, 3D görünüm tüm ekranı kaplar. Gerçek tam ekran destekleniyorsa o da istenir.
+  function setImmersive(on) {
+    state.immersive = on;
+    ui.setImmersive(on);
+  }
+  async function toggleFullscreen() {
+    if (state.immersive) {
+      setImmersive(false);
+      if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
+      return;
+    }
+    setImmersive(true);
+    const el = document.documentElement;
+    try {
+      if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: 'hide' });
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else ui.toast('Sinema modu açık. Çıkmak için sağ üstteki düğmeye dokun.', 3200);
+    } catch {
+      ui.toast('Tarayıcı tam ekranı engelledi: sinema modu açık. Çıkmak için sağ üstteki düğmeye dokun.', 3600);
+    }
+  }
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && state.immersive) setImmersive(false);
+  });
+
   function cycleQuality() {
     const i = QUALITY_ORDER.indexOf(pref);
     const next = QUALITY_ORDER[(i + 1) % QUALITY_ORDER.length];
@@ -359,16 +441,28 @@ export async function startApp() {
     refreshColors();
   }
 
-  // ── fare: hover + tıklama ──
+  // ── fare/dokunma: önce blok, sonra bloğun içinden koltuk ──
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const mouse = { x: 0, y: 0, dirty: false, down: null };
-  const pickAt = (cx, cy) => {
+  const rayAt = (cx, cy) => {
     const r = canvas.getBoundingClientRect();
     ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    return picker.pick(ray.ray);
+    return ray.ray;
   };
+  /** Dokunma: seçili blok içinde koltuk bulunursa onu, yoksa dokunulan bloğu seçer. */
+  function tapAt(cx, cy) {
+    const r = rayAt(cx, cy);
+    if (state.view === 'overview' && state.block) {
+      const seat = picker.pickSeatInBlock(r, state.block);
+      if (seat) return selectSeat(seat);
+    }
+    const hit = picker.pickBlock(r);
+    if (!hit) return;
+    if (state.block && hit.block.id === state.block.id) return ui.toast('Bir koltuğa dokun ya da listeden seç', 1800);
+    selectBlock(hit.block.id, { hint: true });
+  }
   canvas.addEventListener('pointermove', (e) => {
     mouse.x = e.clientX;
     mouse.y = e.clientY;
@@ -386,17 +480,17 @@ export async function startApp() {
     const d = mouse.down;
     mouse.down = null;
     if (!d || rig.mode !== 'orbit') return;
-    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || performance.now() - d.t > 600) return;
-    const s = pickAt(e.clientX, e.clientY);
-    if (s) handlePick(s);
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8 || performance.now() - d.t > 600) return;
+    tapAt(e.clientX, e.clientY);
   });
 
   window.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLSelectElement) return;
+    if (e.key === 'Escape' && state.immersive && state.view !== 'seat') return setImmersive(false);
     if (state.view === 'seat') {
       const map = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
       if (map[e.key]) { e.preventDefault(); step(...map[e.key]); }
-      else if (e.key === 'Escape') exitSeat();
+      else if (e.key === 'Escape') (state.immersive ? setImmersive(false) : exitSeat());
       else if (e.key === ' ') { e.preventDefault(); resetLook(); }
     }
   });
@@ -425,22 +519,53 @@ export async function startApp() {
   rig.orbit.update();
   setTint(false);
 
+  // Uyarlanabilir çözünürlük: kare süresi uzarsa piksel oranı kademeli düşer; çok yavaşsa ağır efektler kapanır.
+  const perf = { ema: 16, cool: 90, ratio: renderer.getPixelRatio(), max: renderer.getPixelRatio() };
+  function adapt(ms) {
+    if (ms > 250 || document.hidden) return; // sekme arka plandaydı
+    perf.ema = perf.ema * 0.94 + ms * 0.06;
+    if (--perf.cool > 0) return;
+    if (perf.ema > 32 && perf.ratio > 1) {
+      perf.ratio = Math.max(1, perf.ratio - 0.25);
+      renderer.setPixelRatio(perf.ratio);
+      renderer.setSize(innerWidth, innerHeight, false);
+      composer?.setPixelRatio(perf.ratio);
+      composer?.setSize(innerWidth, innerHeight);
+      perf.cool = 100;
+    } else if (perf.ema > 38 && perf.ratio <= 1 && !venue.state.lite) {
+      venue.state.lite = true; // lazer, gobo, toz kapanır
+      perf.cool = 200;
+    } else if (perf.ema < 19 && perf.ratio < perf.max && !venue.state.lite) {
+      perf.ratio = Math.min(perf.max, perf.ratio + 0.25);
+      renderer.setPixelRatio(perf.ratio);
+      renderer.setSize(innerWidth, innerHeight, false);
+      composer?.setPixelRatio(perf.ratio);
+      composer?.setSize(innerWidth, innerHeight);
+      perf.cool = 300;
+    }
+  }
+
   let last = performance.now();
   let t = 0;
   let frames = 0;
   function frame(now) {
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const rawMs = now - last;
+    adapt(rawMs);
+    const dt = Math.min(0.05, rawMs / 1000);
     last = now;
     t += dt;
     rig.update(dt);
     if (venue.update(t, camera.position)) invalidateShadows();
+    venue.seatVis.update(camera.position);
     markers.update(t);
     if (mouse.dirty && rig.mode === 'orbit' && !mouse.down) {
       mouse.dirty = false;
-      const s = pickAt(mouse.x, mouse.y);
-      hoverSeat(s);
-      ui.tip(s ? hoverText(s) : null, mouse.x, mouse.y);
-      canvas.style.cursor = s ? 'pointer' : '';
+      const r = rayAt(mouse.x, mouse.y);
+      const seat = state.block ? picker.pickSeatInBlock(r, state.block) : null;
+      const hit = seat ? null : picker.pickBlock(r);
+      markers.setHover(seat && seat !== state.seat ? seat : null);
+      ui.tip(seat ? seatText(seat) : hit ? `${blockLabel(hit.block)} · dokun: blok görünümü` : null, mouse.x, mouse.y);
+      canvas.style.cursor = seat || hit ? 'pointer' : '';
     }
     if (composer) composer.render();
     else renderer.render(scene, camera);
@@ -466,5 +591,11 @@ export async function startApp() {
     seatById: (id) => model.seats.find((s) => s.id === id),
     quality: qKey,
     setTint,
+    picker,
+    crowd,
+    toggleFullscreen,
+    handleTap: tapAt,
+    clearBlock,
+    perf,
   };
 }

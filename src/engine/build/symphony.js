@@ -101,7 +101,7 @@ export function buildSymphony(ctx) {
   }
   for (const s of [-1, 1]) {
     for (let m = 0; m < 10; m++) b.box('black', 0.72, 0.4, 0.6, s * (st.width / 2 + 2.4), 11.2 - m * 0.42, st.z0 + 3, 0, 0.02 * m);
-    b.bar('steel', [s * (st.width / 2 + 2.4), 11.6, st.z0 + 3], [s * (st.width / 2 + 2.4), 19, st.z0 + 3], 0.04);
+    b.bar('steel', [s * (st.width / 2 + 2.4), 11.6, st.z0 + 3], [s * (st.width / 2 + 2.4), 15.6, st.z0 + 3], 0.04);
   }
 
   // Dev film perdesi (animasyonlu) + yan siyah drape

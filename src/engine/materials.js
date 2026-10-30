@@ -17,6 +17,7 @@ export function createMaterials() {
     // Pozitif fotoğraflarında konser zemini sıcak, parlak cilalı beton
     floorConcert: std({ color: 0x77706a, map: conc, roughness: 0.46, metalness: 0.12 }),
     floorGala: std({ color: 0x14141a, roughness: 0.7, metalness: 0.02 }),
+    floorIce: new THREE.MeshStandardMaterial({ color: 0xbfd2e6, roughness: 0.3, metalness: 0.05 }),
     floorGame: std({ color: 0x090a0c, roughness: 0.5, metalness: 0.05 }),
     black: std({ color: 0x0c0c0e, roughness: 0.7, metalness: 0.1 }),
     blackGloss: std({ color: 0x08080a, roughness: 0.25, metalness: 0.4 }),
@@ -41,6 +42,8 @@ export function createMaterials() {
       depthWrite: false,
       side: THREE.DoubleSide,
     }),
+    locaFrame: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.55, 0.7, 2.6), toneMapped: false }),
+    locaWall: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.62, 0.3), toneMapped: false }),
     woodDark: std({ color: 0x70503a, roughness: 0.65, metalness: 0 }),
     doorDark: std({ color: 0x050506, roughness: 1, metalness: 0 }),
     duct: std({ color: 0x3d4045, roughness: 0.6, metalness: 0.6 }),

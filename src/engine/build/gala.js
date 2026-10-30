@@ -110,7 +110,7 @@ export function buildGala(ctx) {
     lampB.box('lamp', 0.22, 0.03, 0.22, x, ringY - 1.5, z);
   }
   for (const a of [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2]) {
-    b.bar('steel', [Math.cos(a) * 5.2, ringY + 0.1, ringZ + Math.sin(a) * 5.2], [Math.cos(a) * 3, 19.2, ringZ + Math.sin(a) * 3], 0.04);
+    b.bar('steel', [Math.cos(a) * 5.2, ringY + 0.1, ringZ + Math.sin(a) * 5.2], [Math.cos(a) * 3, 15.6, ringZ + Math.sin(a) * 3], 0.04);
   }
   const cubeFace = animTex(256, 200);
   const cubeMat = new THREE.MeshBasicMaterial({ map: cubeFace.t, toneMapped: false, color: new THREE.Color(1.3, 1.3, 1.3) });
