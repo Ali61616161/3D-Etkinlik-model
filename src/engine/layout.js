@@ -67,7 +67,7 @@ export function ringLayout(config) {
   }
   // 9: sol köşe (yayın ortası)
   const m1 = tangentNormal(left, 0.5);
-  locas.push({ n: 9, front: m1.pos, facing: m1.n });
+  locas.push({ n: 9, front: m1.pos, facing: m1.n, width: r.cornerLocaWidth });
   // 10–15: karşı uç, soldan sağa
   const endHalf = (r.endLocas * we) / 2;
   for (let i = 0; i < r.endLocas; i++) {
@@ -75,7 +75,7 @@ export function ringLayout(config) {
   }
   // 16: sağ köşe
   const m2 = tangentNormal(right, 0.5);
-  locas.push({ n: 16, front: m2.pos, facing: m2.n });
+  locas.push({ n: 16, front: m2.pos, facing: m2.n, width: r.cornerLocaWidth });
   // 17–24: sağ hat, karşı uçtan sahneye
   for (let i = 0; i < r.sideLocas; i++) {
     locas.push({ n: 17 + i, front: [F, sideHalf - w / 2 - i * w], facing: [-1, 0] });
@@ -166,7 +166,8 @@ export function buildSeatModel(config) {
         const block = newBlock(b, t);
         for (let r = 0; r < t.rows; r++) {
           const rho = t.r0 + r * t.rowPitch;
-          const n = Math.floor((rho * (a1 - a0)) / pitch);
+          const k = t.rows > 1 ? r / (t.rows - 1) : 0;
+          const n = b.seats ? Math.round(lerp(b.seats.near, b.seats.far, k)) : Math.floor((rho * (a1 - a0)) / pitch);
           const rowObj = { index: r, label: String(r + 1), seats: [] };
           block.rows.push(rowObj);
           const y = rowHeight(t, r);
@@ -194,7 +195,8 @@ export function buildSeatModel(config) {
       const pitchHere = t.seatPitch ?? pitch;
       for (let r = 0; r < rows; r++) {
         const k = rows > 1 ? r / (rows - 1) : 0;
-        const n = typeof b.seats === 'number' ? b.seats : Math.round(lerp(b.seats.near, b.seats.far, k));
+        const n0 = typeof b.seats === 'number' ? b.seats : Math.round(lerp(b.seats.near, b.seats.far, k));
+        const n = b.rowSeats?.[r] ?? n0;
         const first = b.firstSeat ? Math.round(lerp(b.firstSeat.near, b.firstSeat.far, k)) : 1;
         const label = t.rowLabels ? t.rowLabels[r] : String(r + 1);
         const rowObj = { index: r, label, seats: [] };
@@ -226,7 +228,8 @@ export function buildSeatModel(config) {
     const big = lc.bigLocas?.includes(L.n);
     const perRow = big ? lc.bigSeatsPerRow : lc.seatsPerRow;
     const W = L.width ?? config.hall.ring.locaWidth;
-    const spacing = (W - 1.1) / perRow;
+    const aisle = lc.aisle ?? 0;
+    const spacing = Math.min(0.62, (W - 1.0 - aisle) / perRow);
     const block = newBlock({ id: `L${L.n}`, name: `Loca ${L.n}`, category: lc.category, style: 'lounge' }, locaTribune, {
       locaNo: L.n,
       capacity: perRow * lc.rows,
@@ -237,7 +240,8 @@ export function buildSeatModel(config) {
       block.rows.push(rowObj);
       const d = lc.rowDepth[r];
       for (let i = 0; i < perRow; i++) {
-        const off = (i - (perRow - 1) / 2) * spacing;
+        const half = perRow / 2;
+        const off = (i - (perRow - 1) / 2) * spacing + (i < half ? -aisle / 2 : aisle / 2);
         addSeat(block, rowObj, {
           seatNo: i + 1,
           pos: [L.front[0] - f[0] * d + u[0] * off, floorY + r * lc.rowRise, L.front[1] - f[1] * d + u[1] * off],

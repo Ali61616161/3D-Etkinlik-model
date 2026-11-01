@@ -33,7 +33,7 @@ Telefonda ve bilgisayarda tarayıcıdan açılıyor, kurulum gerekmiyor. 30 sani
 
 Demoda şunlar var: tribün, loca ve masa seçimi; koltuğun göz hizasından etrafa bakma; oturmalı ve ayakta konser, basketbol, senfoni, gala, e-spor, buz gösterisi ve konferans düzenleri; ayakta alanda bölge ve boya göre görüş.
 
-Şunu baştan söyleyeyim: modeli resmî planınız olmadan, Arkitera'daki mimari proje, Biletix oturma planı ve sitenizdeki fotoğraflardan kurdum. Konser oturmalı düzeni planla uyumlu, ama basketbol, buz gösterisi, konferans gibi diğer düzenler tahminidir. Bu yüzden sizden bir şey rica ediyorum: etkinlik bazlı resmî oturma planları ve sahne ölçüleri (Promoters Pack) bende olursa modeli birebir doğrulayıp, Biletix gibi satış sayfalarına gömülebilir hale getirebilirim.
+Şunu baştan söyleyeyim: modeli resmî planınız olmadan, Arkitera'daki mimari proje, Biletix oturma planı ve sitenizdeki fotoğraflardan kurdum. Oturmalı konser ve basketbol düzenleri resmî kapasiteyle (5.240) ve mimari planla birebir uyumlu; buz gösterisi, gala, e-spor ve konferans düzenleri ise yayımlanmış plan olmadığı için fotoğraflardan kurulmuş yaklaşık yerleşimlerdir. Bu yüzden sizden bir şey rica ediyorum: etkinlik bazlı resmî oturma planları ve sahne ölçüleri (Promoters Pack) bende olursa modeli birebir doğrulayıp, Biletix gibi satış sayfalarına gömülebilir hale getirebilirim.
 
 Önerim, önünüzdeki tek bir etkinlik için, kendi planınızla küçük bir deneme yapmak. Uygun olursanız 15-20 dakikalık bir görüşmede demoyu canlı göstermek isterim.
 

@@ -93,10 +93,19 @@ test('resmî rakamlarla uyum', () => {
   assert.equal(count((s) => s.category === 'loca'), 304, '20 loca × 12 + 4 loca × 16 (Arkiv: 304 skybox koltuğu)');
   assert.equal(ringLayout(config).locas.length, 24);
   const concert = seatsForConfig(model, 'concert').length;
-  assert.ok(Math.abs(concert - 5240) <= 120, `konser tam oturmalı ≈ 5.240 = 2.160 + 1.392 + 822 + 562 + 304 (model: ${concert})`);
-  const tele = count((s) => s.category === 'ek-tribun');
-  assert.ok(Math.abs(tele - 562) <= 10, `ek tribün ≈ 562 (model: ${tele})`);
-  assert.equal(count((s) => s.category === 'vip'), 88, '88 saha kenarı VIP');
+  assert.equal(concert, 5240, 'konser tam oturmalı = 2.160 + 1.392 + 822 + 562 + 304 (Arkiv)');
+  assert.equal(seatsForConfig(model, 'basketball').length, 5240, 'basketbol = 5.240 (resmî; EuroCup finali 2018 seyirci)');
+  const bbFloor = seatsForConfig(model, 'basketball').filter((s) => s.category === 'ek-tribun' || s.category === 'vip').length;
+  assert.equal(bbFloor, 2160, 'basketbol zemini = Arkiv zemin oturmalı 2.160');
+  assert.equal(count((s) => s.category === 'vip'), 88, '88 saha içi VIP (Vikipedi)');
+  for (const id of ['103', '104', '109']) assert.ok(model.blocks.get(id)?.configs.includes('basketball'), `${id}: Darüşşafaka kombine bloğu basketbolda olmalı`);
+  const big = [...model.blocks.values()].filter((b) => b.locaNo && b.seatCount === 16).map((b) => b.locaNo).sort((a, c) => a - c);
+  assert.deepEqual(big, [9, 10, 15, 16], '16 kişilik localar: Arkitera +68,50 planı');
+  for (const id of ['207', '211']) {
+    const r = model.blocks.get(id).rows;
+    assert.equal(r[0].seats.length, 4);
+    assert.equal(r.at(-1).seats.length, 18);
+  }
 });
 
 test('Biletix plan aralıkları: 208/210 16→21, 209 18→12 (4–15)', () => {
@@ -247,7 +256,7 @@ test('Arkitera planı: yan tribün 13 sıra (3+10) × 14 koltuk, karşı uç 14 
   }
   for (const id of ['208', '209', '210']) assert.equal(model.blocks.get(id).rows.length, 14, `${id}: sıra`);
   const side = ['202', '203', '204', '205', '206', '212', '213', '214', '215', '216'].reduce((n, id) => n + model.blocks.get(id).seatCount, 0);
-  assert.equal(side, 1820); // 10 blok × 13 sıra × 14 = 1.392 sabit (10 sıra) + 420 geri çekilebilir (3 sıra)
+  assert.equal(side, 1808); // 10 blok × 13 sıra × 14 = 1.820 − 12 (202/216 merdiven boşluğu)
   const top = model.seats[model.blocks.get('204').rows[12].seats[0]].pos[1];
   assert.ok(top > 5.8 && top < 6.8, `alt tribün tepe kotu ≈ 6,7 m (model: ${top})`);
 });
