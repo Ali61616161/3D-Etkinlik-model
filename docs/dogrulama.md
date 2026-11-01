@@ -24,7 +24,7 @@ Plan üzerindeki "3000 / 5200 / 2700×1800" ölçü çizgilerinden ölçek çık
 | Kalem | Eski model | Plan/kesitten | Not |
 |---|---|---|---|
 | Zemin | 31 × 54 m | **30 × 52 m** (zemin ayağı 3000; sahne duvarı → tribün ayağı 5200) | kesit B-B: zemin kotu +57,60 |
-| Alt tribün | 12 sıra, tepe ≈ 5 m | **16 sıra, tepe +64,28 (6,7 m)**, yan tribün derinliği ≈ 12,7 m | uç/köşe tribünler 13 sıra, ≈ 4,2 m |
+| Alt tribün | 12 sıra | **yan: 13 sıra (3 geri çekilebilir + 10 sabit), uç: 14 sıra (3 + 11)**, tepe +64,28 (6,7 m) | sıralar planın yakın görüntüsünden sayıldı |
 | Loca zemini | 5,0 m | **+68,50 → 10,9 m** | localar alt tribünün arka sıraları üzerine **kantilever** taşar; altı boş |
 | Loca ön hattı | \|x\| 26,3 m, derinlik 5,2 | **\|x\| 22,6 m, derinlik ≈ 4,2 m**, uç hat z ≈ 29,7, **köşeler 45° pah** | plan +68,50 |
 | Loca ölçüsü | 5,0 m genişlik | yan 5,2 m, uç ≈ 5,7 m | 8 + 1 + 6 + 1 + 8 = 24 ✓ |

@@ -3,6 +3,16 @@
 
 const DEG = Math.PI / 180;
 
+/**
+ * Sıra yüksekliği: ilk `lowRows` sıra (geri çekilebilir/teleskopik ön sıralar) düşük eğimli (`lowRise`),
+ * arkadakiler (sabit tribün) dik eğimli (`rise`). Arkitera planı: ön 3 sıra açık renkli = geri çekilebilir.
+ */
+export function rowHeight(t, r) {
+  const base = t.baseY ?? 0, rise = t.rise ?? 0;
+  const n0 = t.lowRows ?? 0, r0 = t.lowRise ?? rise;
+  return base + Math.min(r, n0) * r0 + Math.max(0, r - n0) * rise;
+}
+
 const norm = (v) => {
   const l = Math.hypot(v[0], v[1]);
   return [v[0] / l, v[1] / l];
@@ -159,7 +169,7 @@ export function buildSeatModel(config) {
           const n = Math.floor((rho * (a1 - a0)) / pitch);
           const rowObj = { index: r, label: String(r + 1), seats: [] };
           block.rows.push(rowObj);
-          const y = t.baseY + r * t.rise;
+          const y = rowHeight(t, r);
           for (let i = 0; i < n; i++) {
             const ang = a1 - ((i + 0.5) * (a1 - a0)) / n; // 1. koltuk bakana göre solda
             const x = cx + rho * Math.cos(ang);
@@ -191,7 +201,7 @@ export function buildSeatModel(config) {
         block.rows.push(rowObj);
         const cx = t.origin[0] + u[0] * b.lateral - f[0] * r * t.rowPitch;
         const cz = t.origin[1] + u[1] * b.lateral - f[1] * r * t.rowPitch;
-        const y = baseY + r * rise;
+        const y = rowHeight(t, r);
         for (let i = 0; i < n; i++) {
           const off = (i - (n - 1) / 2) * pitchHere;
           addSeat(block, rowObj, {
@@ -289,15 +299,15 @@ export function makeGroundHeight(config) {
         if (lat < t.span[0] || lat > t.span[1]) continue;
         const r = Math.floor(depth / t.rowPitch + 0.5);
         if (r < 0) continue;
-        if (r < t.rows) h = Math.max(h, (t.baseY ?? 0) + r * (t.rise ?? 0));
-        else if (depth < t.rows * t.rowPitch + 1.4) h = Math.max(h, (t.baseY ?? 0) + (t.rows - 1) * (t.rise ?? 0));
+        if (r < t.rows) h = Math.max(h, rowHeight(t, r));
+        else if (depth < t.rows * t.rowPitch + 1.4) h = Math.max(h, rowHeight(t, t.rows - 1));
       } else {
         const dx = x - t.center[0], dz = z - t.center[1];
         const ang = Math.atan2(dz, dx);
         const a0 = t.angles[0] * DEG, a1 = t.angles[1] * DEG;
         if (ang < a0 - 0.05 || ang > a1 + 0.05) continue;
         const r = Math.floor((Math.hypot(dx, dz) - t.r0) / t.rowPitch + 0.5);
-        if (r >= 0 && r < t.rows) h = Math.max(h, t.baseY + r * t.rise);
+        if (r >= 0 && r < t.rows) h = Math.max(h, rowHeight(t, r));
       }
     }
     return h;

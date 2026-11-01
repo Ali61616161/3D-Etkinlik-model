@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Batch } from '../batch.js';
 import { labelMesh } from './labels.js';
+import { rowHeight } from '../layout.js';
 
 const DEG = Math.PI / 180;
 const norm = (v) => {
@@ -45,7 +46,7 @@ export function buildBowl(ctx) {
 
     // Basamaklar
     for (let r = 0; r < rows; r++) {
-      const top = baseY + r * rise;
+      const top = rowHeight(t, r);
       const [cx, cz] = at(cL, r * rowPitch);
       b.box('tread', w, top, rowPitch + 0.004, cx, top / 2, cz, ry);
     }
@@ -75,18 +76,18 @@ export function buildBowl(ctx) {
       if (gap < 0.6) continue;
       const mid = (eL + eR) / 2;
       for (let r = 0; r < rows; r++) {
-        const top = baseY + r * rise;
+        const top = rowHeight(t, r);
         const [cx, cz] = at(mid, r * rowPitch - rowPitch / 2 + 0.05);
         b.box('nosing', gap, 0.03, 0.09, cx, top + 0.012, cz, ry);
         // basamak ışıkları (koridor kenarlarında) + sıra numarası levhası (riser üzerinde)
         for (const lat of [eL + 0.07, eR - 0.07]) {
           const [lx, lz] = at(lat, r * rowPitch - rowPitch / 2 - 0.008);
-          b.box('lampWarm', 0.07, 0.035, 0.02, lx, top - (r === 0 ? baseY / 2 : rise / 2) + 0.07, lz, ry);
+          b.box('lampWarm', 0.07, 0.035, 0.02, lx, top - (r === 0 ? baseY / 2 : (top - rowHeight(t, r - 1)) / 2) + 0.07, lz, ry);
         }
         const [px, pz] = at(mid, r * rowPitch - rowPitch / 2 - 0.006);
         plaques[keyOf(t)].push({
           text: String(r + 1),
-          pos: [px, top - (r === 0 ? baseY / 2 : rise / 2), pz],
+          pos: [px, top - (r === 0 ? baseY / 2 : (top - rowHeight(t, r - 1)) / 2), pz],
           ry,
           w: 0.2,
           h: 0.1,
@@ -96,7 +97,7 @@ export function buildBowl(ctx) {
         for (const lat of [eL + 0.04, eR - 0.04]) {
           const [x0, z0] = at(lat, 0);
           const [x1, z1] = at(lat, (rows - 1) * rowPitch);
-          const y1 = baseY + (rows - 1) * rise;
+          const y1 = rowHeight(t, rows - 1);
           b.bar('black', [x0, baseY + 0.95, z0], [x1, y1 + 0.95, z1], 0.05);
           b.bar('steel', [x0, baseY, z0], [x0, baseY + 0.95, z0], 0.04);
           b.bar('steel', [x1, y1, z1], [x1, y1 + 0.95, z1], 0.04);
@@ -108,7 +109,7 @@ export function buildBowl(ctx) {
       for (const lat of [span[0] + 0.03, span[1] - 0.03]) {
         const [x0, z0] = at(lat, 0);
         const [x1, z1] = at(lat, (rows - 1) * rowPitch);
-        const y1 = baseY + (rows - 1) * rise;
+        const y1 = rowHeight(t, rows - 1);
         b.bar('steel', [x0, baseY + 0.9, z0], [x1, y1 + 0.9, z1], 0.04);
       }
     }
@@ -120,7 +121,7 @@ export function buildBowl(ctx) {
     const a1 = t.angles[1] * DEG + 0.03;
     for (let r = 0; r < t.rows; r++) {
       const rho = t.r0 + r * t.rowPitch;
-      const top = t.baseY + r * t.rise;
+      const top = rowHeight(t, r);
       const rIn = rho - t.rowPitch / 2;
       const rOut = rho + t.rowPitch / 2 + 0.004;
       const shape = new THREE.Shape();

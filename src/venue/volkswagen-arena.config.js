@@ -29,7 +29,7 @@ function evenCenters(count, blockWidth, span) {
   return Array.from({ length: count }, (_, i) => -span / 2 + blockWidth / 2 + i * (blockWidth + gap));
 }
 
-const SIDE_SEATS = 10; // yan blok sıra başına koltuk: TAHMİN (Biletix en geniş blok 14); toplam konser kapasitesini resmî 4.500–5.800 aralığının ortasında tutar
+const SIDE_SEATS = 14; // Biletix planı: yan blokların ön sırası 1–14 (kaynaklı); Arkitera planında sıra başına 14 koltuk görünür
 const sideCenters = evenCenters(5, SIDE_SEATS * SEAT, 41);
 const ROW_LETTERS = 'ABCDEFGHIJKLMNOPRSTU'; // planda zemin blokları A…U → 20 sıra (6×18×20 = 2160)
 
@@ -50,7 +50,7 @@ export default {
     ],
     assumptions: [
       'Salonun metrik ölçüleri, çatı yüksekliği ve tribün eğimleri resmî olarak yayımlanmamış; fotoğraf ve plan oranlarından tahmin edildi.',
-      'Yan/karşı tribün sıra sayısı (12) ve sıra başına koltuk sayısı tahmin; plandaki 14 koltuk üst sınırı baz alındı.',
+      'Yan tribün 13 sıra (3 geri çekilebilir + 10 sabit) ve karşı uç 14 sıra (3 + 11): Arkitera kat planından sayıldı; sıra başı koltuk Biletix (14) ve Arkiv dökümüyle uyumlu.',
       'Basketbol düzeninde saha içi bloklar yok; sahne ucunda teleskopik ek tribün (3×11×17 ≈ 561, resmî ek tribün 562) ve — referans fotoğraflara göre — sahanın iki yanında geri çekilebilir ek tribün (tahmini) var.',
       'Resmî basketbol kapasitesi 5.240; bu modeldeki toplam daha düşük çıkar — gerçek basketbol oturma planı gelince güncellenecek.',
       'Zemin blokları plandaki A…U harf dizisi yerine 20 harflik tek dizi (A–U) ile etiketlendi.',
@@ -100,7 +100,7 @@ export default {
       overview: { position: [0, 13.6, 26.5], target: [0, 2.5, -9] },
       stage: { width: 16, depth: 10, height: 1.5, z0: -28 }, // 160 m², 1,5 m (vwarena.com)
       locaNote: 'Localar 12 veya 16 kişilik; loca kapısından hızlı giriş, VIP giriş + vale, asansörle loca katı, Volkswagen Lounge hakkı. Satış etkinliğe göre değişir.',
-      note: 'Tam oturmalı konser: zemin blokları 001–006 + tribünler + localar. Resmî tam oturmalı kapasite ≈ 4.500 (vwarena.com) – 5.000 (Time Out).',
+      note: 'Tam oturmalı konser: zemin 2.160 + tribün (sabit 1.392 + premium 822 + geri çekilebilir 562) + loca 304 = 5.240 (Arkiv dökümü); resmî duyurularda 4.500–5.800.',
     },
     standing: {
       label: 'Konser · ayakta',
@@ -305,9 +305,11 @@ export default {
       group: 'Yan Tribün (sol)',
       origin: [-15.6, 0],
       facing: [1, 0],
-      rows: 16,
-      rowPitch: ROW,
-      rise: RISE,
+      rows: 13, // Arkitera planı: 3 geri çekilebilir ön sıra + 10 sabit sıra
+      rowPitch: 0.87,
+      lowRows: 3,
+      lowRise: 0.15,
+      rise: 0.6, // kesit: sabit tribün dik (≈ 31°), tepe +64,28
       baseY: BASE,
       span: [-21.5, 21.5],
       blocks: ['202', '203', '204', '205', '206'].map((id, i) => ({
@@ -325,9 +327,11 @@ export default {
       group: 'Yan Tribün (sağ)',
       origin: [15.6, 0],
       facing: [-1, 0],
-      rows: 16,
-      rowPitch: ROW,
-      rise: RISE,
+      rows: 13, // Arkitera planı: 3 geri çekilebilir ön sıra + 10 sabit sıra
+      rowPitch: 0.87,
+      lowRows: 3,
+      lowRise: 0.15,
+      rise: 0.6, // kesit: sabit tribün dik (≈ 31°), tepe +64,28
       baseY: BASE,
       span: [-21.5, 21.5],
       blocks: ['212', '213', '214', '215', '216'].map((id, i) => ({
@@ -345,9 +349,11 @@ export default {
       group: 'Yan Tribün (sol)',
       origin: [-15.6, -23.4],
       facing: [1, 0],
-      rows: 16,
-      rowPitch: ROW,
-      rise: RISE,
+      rows: 2,
+      rowPitch: 0.87,
+      lowRows: 3,
+      lowRise: 0.15,
+      rise: 0.6,
       baseY: BASE,
       span: [-1.6, 1.6],
       blocks: [{ id: '201', name: 'Tribün 201', lateral: 0, seats: 5, category: 'tribun' }],
@@ -359,9 +365,11 @@ export default {
       group: 'Yan Tribün (sağ)',
       origin: [15.6, -23.4],
       facing: [-1, 0],
-      rows: 16,
-      rowPitch: ROW,
-      rise: RISE,
+      rows: 2,
+      rowPitch: 0.87,
+      lowRows: 3,
+      lowRise: 0.15,
+      rise: 0.6,
       baseY: BASE,
       span: [-1.6, 1.6],
       blocks: [{ id: '217', name: 'Tribün 217', lateral: 0, seats: 5, category: 'tribun' }],
@@ -373,9 +381,11 @@ export default {
       group: 'Karşı Tribün',
       origin: [0, 22.4],
       facing: [0, -1],
-      rows: 13,
+      rows: 14, // Arkitera planı: 3 geri çekilebilir + 11 sabit sıra
       rowPitch: 0.85,
-      rise: 0.32,
+      lowRows: 3,
+      lowRise: 0.15,
+      rise: 0.4,
       baseY: BASE,
       span: [-15.4, 15.4],
       blocks: [
@@ -393,9 +403,11 @@ export default {
       center: [-FLOOR_HALF, 21.9],
       angles: [98, 172], // derece, (x,z) düzleminde +x'ten +z'ye
       r0: 1.4,
-      rows: 13,
+      rows: 9,
       rowPitch: 0.85,
-      rise: 0.32,
+      lowRows: 3,
+      lowRise: 0.15,
+      rise: 0.4,
       baseY: BASE,
       blocks: [{ id: '207', name: 'Tribün 207', category: 'tribun-karsi' }],
     },
@@ -407,9 +419,11 @@ export default {
       center: [FLOOR_HALF, 21.9],
       angles: [8, 82],
       r0: 1.4,
-      rows: 13,
+      rows: 9,
       rowPitch: 0.85,
-      rise: 0.32,
+      lowRows: 3,
+      lowRise: 0.15,
+      rise: 0.4,
       baseY: BASE,
       blocks: [{ id: '211', name: 'Tribün 211', category: 'tribun-karsi' }],
     },

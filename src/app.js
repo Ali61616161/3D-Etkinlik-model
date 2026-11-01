@@ -12,7 +12,7 @@ import { createVenue } from './engine/venue.js';
 import { CameraRig } from './engine/cameraRig.js';
 import { SeatPicker } from './engine/picker.js';
 import { Markers } from './engine/markers.js';
-import { Crowd } from './engine/crowd.js';
+import { Crowd, EYE_RATIO } from './engine/crowd.js';
 import { createUI } from './ui/ui.js';
 import { Minimap } from './ui/minimap.js';
 
@@ -270,6 +270,12 @@ export async function startApp() {
   };
 
   /** Etkinliğe özel bilgi notu (loca satış politikası vb.). */
+  /** Boyu ortalamanın belirgin altında olanlara tek cümlelik, yönlendirici ipucu (uzun boyda hiçbir şey yazılmaz). */
+  function standingTip() {
+    return standH < 1.6
+      ? 'İpucu: Ayakta alanda görüş kalabalığa bağlıdır. Erken gelip öne ya da yan bölgelere geçebilir veya yükseltili tribün biletlerine bakabilirsin.'
+      : '';
+  }
   function blockNote(block) {
     if (block.locaNo) return cfgOf().locaNote ?? '';
     if (block.style === 'standing') return 'Ayakta alan: koltuk numarası yok; Boyunu aşağıdan ayarlayabilirsin.';
@@ -317,7 +323,7 @@ export async function startApp() {
   }
   function viewStanding(seat) {
     if (!seat) return;
-    seat.eye[1] = seat.pos[1] + standH - 0.1;
+    seat.eye[1] = seat.pos[1] + standH * EYE_RATIO; // göz yüksekliği ≈ boy × 0,936 (170 cm → ≈ 11 cm fark)
     selectSeat(seat);
   }
   /** ix: −1 sol / 0 orta / 1 sağ · iz: 0 ön / 1 orta / 2 arka */
@@ -368,7 +374,7 @@ export async function startApp() {
     ui.setBlockBar(null, false);
     state.block = block;
     ui.setBlock(block, seat.rowIndex, seat);
-    ui.showSeat(seat, statsFor(seat), block, blockNote(block));
+    ui.showSeat(seat, statsFor(seat), block, seat.style === 'standing' ? standingTip() : blockNote(block));
     markers.setSelected(seat);
     minimap.setSelected(seat);
     minimap.setBlock(block.id);
@@ -616,6 +622,7 @@ export async function startApp() {
     if (venue.update(t, camera.position)) invalidateShadows();
     venue.state.dim = state.view === 'seat' ? 0.22 : state.block ? 0.5 : 1;
     venue.seatVis.update(camera.position);
+    crowd.update(camera.position);
     markers.update(t);
     if (mouse.dirty && rig.mode === 'orbit' && !mouse.down) {
       mouse.dirty = false;

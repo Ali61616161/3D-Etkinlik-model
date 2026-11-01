@@ -221,13 +221,13 @@ export function createUI({ config, model, handlers }) {
         const hh = document.createElement('div');
         hh.className = 'heights';
         hh.innerHTML = `<label for="heightRange">Boyun</label>
-          <input id="heightRange" type="range" min="140" max="210" step="1" value="170" aria-label="Boy (cm)" />
-          <span class="hnum"><input id="heightNum" type="number" min="140" max="210" step="1" value="170" inputmode="numeric" aria-label="Boy (cm)" /> cm</span>`;
+          <input id="heightRange" type="range" min="130" max="215" step="1" value="170" aria-label="Boy (cm)" />
+          <span class="hnum"><input id="heightNum" type="number" min="130" max="215" step="1" value="170" inputmode="numeric" aria-label="Boy (cm)" /> cm</span>`;
         const rng = hh.querySelector('#heightRange'), num = hh.querySelector('#heightNum');
         const apply = (v, fromNum) => {
           let n = Math.round(Number(v));
           if (!Number.isFinite(n)) return;
-          n = Math.min(210, Math.max(140, n));
+          n = Math.min(215, Math.max(130, n));
           rng.value = String(n);
           if (!fromNum || Number(num.value) === n) num.value = String(n);
           handlers.onStandHeight(n / 100);

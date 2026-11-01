@@ -93,7 +93,7 @@ test('resmî rakamlarla uyum', () => {
   assert.equal(count((s) => s.category === 'loca'), 304, '20 loca × 12 + 4 loca × 16 (Arkiv: 304 skybox koltuğu)');
   assert.equal(ringLayout(config).locas.length, 24);
   const concert = seatsForConfig(model, 'concert').length;
-  assert.ok(concert > 4500 && concert < 5800, `konser tam oturmalı 4.500–5.800 (model: ${concert})`);
+  assert.ok(Math.abs(concert - 5240) <= 120, `konser tam oturmalı ≈ 5.240 = 2.160 + 1.392 + 822 + 562 + 304 (model: ${concert})`);
   const tele = count((s) => s.category === 'ek-tribun');
   assert.ok(Math.abs(tele - 562) <= 10, `ek tribün ≈ 562 (model: ${tele})`);
   assert.equal(count((s) => s.category === 'vip'), 88, '88 saha kenarı VIP');
@@ -237,4 +237,17 @@ test('kalabalık boyları: yetişkin aralığı, erkek ≈176 / kadın ≈163 ka
   const mean = sum / N;
   assert.ok(mean > 1.68 && mean < 1.71, `ortalama ${mean}`);
   assert.ok(min >= 1.45 && max <= 2.0);
+});
+
+test('Arkitera planı: yan tribün 13 sıra (3+10) × 14 koltuk, karşı uç 14 sıra; sabit tribün ≈ 1.392 + geri çekilebilir pay', () => {
+  for (const id of ['202', '203', '204', '205', '206', '212', '213', '214', '215', '216']) {
+    const b = model.blocks.get(id);
+    assert.equal(b.rows.length, 13, `${id}: sıra`);
+    assert.equal(b.rows[0].seats.length, 14, `${id}: sıra başı koltuk`);
+  }
+  for (const id of ['208', '209', '210']) assert.equal(model.blocks.get(id).rows.length, 14, `${id}: sıra`);
+  const side = ['202', '203', '204', '205', '206', '212', '213', '214', '215', '216'].reduce((n, id) => n + model.blocks.get(id).seatCount, 0);
+  assert.equal(side, 1820); // 10 blok × 13 sıra × 14 = 1.392 sabit (10 sıra) + 420 geri çekilebilir (3 sıra)
+  const top = model.seats[model.blocks.get('204').rows[12].seats[0]].pos[1];
+  assert.ok(top > 5.8 && top < 6.8, `alt tribün tepe kotu ≈ 6,7 m (model: ${top})`);
 });
