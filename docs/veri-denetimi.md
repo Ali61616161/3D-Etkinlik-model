@@ -40,3 +40,25 @@ Durum: **K** = kaynakta doğrudan var · **T** = kaynaklardan hesapla türetildi
 2. Etkinlik başına **resmî oturma planı** yalnızca oturmalı konser için (Biletix).
 3. Basketbolda 1xx bloklarının tam sırası (103, 104, 109 dışındakiler) ve her bloğun koltuk sayısı resmî planla doğrulanmalı.
 4. Yüz yüze keşif yok: pozitif ile birlikte bir gün salonda ölçü/fotoğraf kontrolü yapılması en iyisi.
+
+## Arkitera planında ikinci tur sayım (yakın görüntü, 2,4× büyütme)
+
+| Gözlem | Sonuç | Modelle ilişki |
+|---|---|---|
+| Yan tribün sıra sütunları | 13 ana sıra: 10 koyu (sabit) + 3 açık renkli (geri çekilebilir) | Modelde 13 sıra ✔ |
+| Yan tribün sahne tarafındaki merdiven | Son iki sıra sütunu merdiven kutusuyla kesiliyor | 202/216'daki 12 koltuk düzeltmesini destekliyor ✔ |
+| Yan tribün arka duvar boyunca kısa ek sütun | Duvar girintileri arasında kısmi bir 14. sıra çiziliyor (her parçada ≈ 11 koltuk) | **Modele işlenmedi**: eklenirse toplam 5.240'ı aşar; resmî döküm (Arkiv) bu satırı içermiyor olabilir, çelişki Pozitif'ten sorulmalı |
+| 207/211 yelpaze | ≈ 10 yay sırası | Modelde 10 ✔ |
+| Karşı uç (208–210) | 3 açık renkli + 11 koyu = 14 sıra | Modelde 14 ✔ |
+
+## İnternette bulunabilecek her şey tarandı; bulunamayanlar
+
+| Konu | Arama sonucu |
+|---|---|
+| Basketbol 101–115 blok haritası | Mobilet/Passo/Biletix sayfalarında yalnızca 103, 104, 109 (Darüşşafaka kombine eşleştirmesi) ve 202, 203, 204, 209 geçiyor; harita görseli yok |
+| Buz pisti ölçüsü (Ice Age Live) | Yapımcının teknik dosyasında; internette yok (kurulum 12 saat, söküm 6 saat bilgisi var) |
+| GQ Men of the Year masa/davetli sayısı | Haberlerde yok |
+| E-spor sahne/seyirci koltuk sayısı | Riot duyurularında yalnızca genel kapasite (4.500–6.500) |
+| Promoters Pack | Parola korumalı (155 MB, 85 sayfa) |
+
+Bu kalemler yalnızca Pozitif'ten (sales@vwarena.com) alınabilir. Modelde bu düzenler **yaklaşık** olarak işaretli kalır.
