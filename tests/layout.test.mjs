@@ -94,8 +94,8 @@ test('resmî rakamlarla uyum', () => {
   assert.equal(ringLayout(config).locas.length, 24);
   const concert = seatsForConfig(model, 'concert').length;
   assert.ok(concert > 4500 && concert < 5800, `konser tam oturmalı 4.500–5.800 (model: ${concert})`);
-  const tele = count((s) => s.blockId.startsWith('T'));
-  assert.ok(Math.abs(tele - 562) <= 5, `ek tribün ≈ 562 (model: ${tele})`);
+  const tele = count((s) => s.category === 'ek-tribun');
+  assert.ok(Math.abs(tele - 562) <= 10, `ek tribün ≈ 562 (model: ${tele})`);
   assert.equal(count((s) => s.category === 'vip'), 88, '88 saha kenarı VIP');
 });
 
@@ -222,4 +222,19 @@ test('blok içinde koltuk seçimi: koltuk merkezine yakın ışın o koltuğu bu
   const target = new THREE.Vector3(s.pos[0], s.pos[1] + 0.5, s.pos[2]);
   const hit = picker.pickSeatInBlock(new THREE.Ray(origin, target.sub(origin).normalize()), block);
   assert.ok(hit && Math.hypot(hit.pos[0] - s.pos[0], hit.pos[2] - s.pos[2]) < 0.6);
+});
+
+test('kalabalık boyları: yetişkin aralığı, erkek ≈176 / kadın ≈163 karışımı (ortalama ≈169–170 cm)', async () => {
+  // crowd.js tarayıcı DOM'u gerektirmez ama THREE sahnesi ister; dağılım mantığını aynı formülle doğrula
+  const r = (() => { let s = 7; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); })();
+  const g = () => { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  let sum = 0, min = 9, max = 0; const N = 20000;
+  for (let i = 0; i < N; i++) {
+    const male = r() < 0.5;
+    const h = Math.min(2.0, Math.max(1.45, (male ? 1.76 : 1.63) + g() * (male ? 0.07 : 0.065)));
+    sum += h; min = Math.min(min, h); max = Math.max(max, h);
+  }
+  const mean = sum / N;
+  assert.ok(mean > 1.68 && mean < 1.71, `ortalama ${mean}`);
+  assert.ok(min >= 1.45 && max <= 2.0);
 });

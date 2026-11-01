@@ -5,6 +5,20 @@ import { seatsForConfig } from './layout.js';
 const PALETTE = [0x1d2230, 0x2b2f3a, 0x3a2b2b, 0x24362f, 0x40424a, 0x16171b, 0x4a3a2c, 0x2c2a45, 0x5a2f3a, 0x20324a, 0x6a6e78, 0x7a3b2a]
   .map((c) => new THREE.Color(c));
 
+// Yetişkin boy dağılımı (Türkiye): erkek ≈ 176 ± 7 cm, kadın ≈ 163 ± 6,5 cm (Neyzi ve ark. 2008; haber aktarımları 2018). 50/50 karışım.
+const FIG_H = 1.755; // figür modelinin boyu (m)
+function gauss(r) {
+  let u = 0, v = 0;
+  while (u === 0) u = r();
+  while (v === 0) v = r();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function personHeight(r) {
+  const male = r() < 0.5;
+  const h = (male ? 1.76 : 1.63) + gauss(r) * (male ? 0.07 : 0.065);
+  return Math.min(2.0, Math.max(1.45, h));
+}
+
 // deterministik rastgele: her açılışta aynı kalabalık
 function rng(seed) {
   let s = seed >>> 0;
@@ -63,12 +77,14 @@ export class Crowd {
     const r = rng(key.length * 977 + 13);
     const seats = seatsForConfig(this.model, key);
     const people = [];
+    const perPoint = this.low ? 1 : 2; // ayakta: nokta başına kişi (0,9 m ızgara → ≈ 2,5 kişi/m² gerçekçi yoğunluk)
     for (const s of seats) {
       const standing = s.style === 'standing';
       const loca = s.category === 'loca';
       const occ = standing ? 0.94 : loca ? 0.7 : s.category === 'vip' ? 0.9 : 0.64;
+      for (let k = 0; k < (standing ? perPoint : 1); k++) {
       if (r() > occ) continue;
-      const jitter = standing ? 0.14 : 0.02;
+      const jitter = standing ? (perPoint > 1 ? 0.42 : 0.14) : 0.02;
       people.push({
         seat: s,
         standing,
@@ -76,9 +92,10 @@ export class Crowd {
         y: s.pos[1],
         z: s.pos[2] + (r() - 0.5) * jitter * 2,
         yaw: standing ? Math.atan2(0, -1) * 0 + (r() - 0.5) * 0.7 : s.yaw,
-        scale: standing ? 0.93 + r() * 0.15 : 0.97 + r() * 0.08,
+        scale: personHeight(r) / FIG_H,
         color: PALETTE[Math.floor(r() * PALETTE.length)],
       });
+      }
     }
     const set = { key, items: people, meshes: [], hidden: new Set(), byIndex: new Map() };
     const d = new THREE.Object3D();

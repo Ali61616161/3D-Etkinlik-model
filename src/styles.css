@@ -316,3 +316,9 @@ body.immersive #blockBar { bottom: 20px; }
 .heights span { color: var(--muted); font-size: 12.5px; margin-right: 4px; }
 .heights button { flex: 1; min-height: 36px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.05); font-weight: 600; font-size: 13px; }
 .heights button[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: #05131c; }
+
+.heights { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
+.heights label { color: var(--muted); font-size: 12.5px; }
+.heights input[type='range'] { width: 100%; accent-color: var(--accent); min-width: 0; }
+.heights .hnum { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12.5px; }
+.heights input[type='number'] { width: 64px; background: #0c0f14; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px 6px; text-align: center; font: inherit; }

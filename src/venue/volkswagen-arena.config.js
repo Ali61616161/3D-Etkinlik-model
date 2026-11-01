@@ -29,7 +29,7 @@ function evenCenters(count, blockWidth, span) {
   return Array.from({ length: count }, (_, i) => -span / 2 + blockWidth / 2 + i * (blockWidth + gap));
 }
 
-const SIDE_SEATS = 12; // yan blok sıra başına koltuk (Biletix en geniş: 14; toplam kapasiteyi resmî 4.500–5.800 aralığında tutmak için 12)
+const SIDE_SEATS = 10; // yan blok sıra başına koltuk: TAHMİN (Biletix en geniş blok 14); toplam konser kapasitesini resmî 4.500–5.800 aralığının ortasında tutar
 const sideCenters = evenCenters(5, SIDE_SEATS * SEAT, 41);
 const ROW_LETTERS = 'ABCDEFGHIJKLMNOPRSTU'; // planda zemin blokları A…U → 20 sıra (6×18×20 = 2160)
 
@@ -100,7 +100,7 @@ export default {
       overview: { position: [0, 13.6, 26.5], target: [0, 2.5, -9] },
       stage: { width: 16, depth: 10, height: 1.5, z0: -28 }, // 160 m², 1,5 m (vwarena.com)
       locaNote: 'Localar 12 veya 16 kişilik; loca kapısından hızlı giriş, VIP giriş + vale, asansörle loca katı, Volkswagen Lounge hakkı. Satış etkinliğe göre değişir.',
-      note: 'Tam oturmalı konser: zemin blokları 001–006 + tribünler + localar (resmî ≈4.500–5.000).',
+      note: 'Tam oturmalı konser: zemin blokları 001–006 + tribünler + localar. Resmî tam oturmalı kapasite ≈ 4.500 (vwarena.com) – 5.000 (Time Out).',
     },
     standing: {
       label: 'Konser · ayakta',
@@ -115,7 +115,7 @@ export default {
       stage: { width: 16, depth: 10, height: 1.5, z0: -28 },
       crowd: true,
       locaNote: 'Zemin ayakta olsa da localar oturmalıdır (12/16 kişilik); loca satışı etkinliğe göre değişir.',
-      note: 'Zemin ayakta (Golden Circle + saha içi), tribünler ve localar oturmalı (resmî ≈6.500).',
+      note: 'Zemin ayakta (Golden Circle + saha içi), tribünler ve localar oturmalı. Resmî toplam ≈ 6.500 kişi; modeldeki noktalar kapasite değil bakış noktasıdır.',
     },
     symphony: {
       label: 'Senfoni · film konseri',
@@ -419,17 +419,36 @@ export default {
       kind: 'rake',
       configs: ['basketball'],
       group: 'Ek Tribün (Basketbol)',
-      origin: [0, -17.3],
+      origin: [0, -17.6],
       facing: [0, 1],
-      rows: 11,
+      rows: 5,
       rowPitch: 0.85,
-      rise: 0.35,
+      rise: 0.3,
       baseY: 0.3,
       span: [-14.4, 14.4],
       blocks: [
-        { id: 'T1', name: 'Ek Tribün T1', lateral: -9.6, seats: 17, category: 'ek-tribun' },
-        { id: 'T2', name: 'Ek Tribün T2', lateral: 0, seats: 17, category: 'ek-tribun' },
-        { id: 'T3', name: 'Ek Tribün T3', lateral: 9.6, seats: 17, category: 'ek-tribun' },
+        { id: 'T1', name: 'Ek Tribün T1', lateral: -9.6, seats: 14, category: 'ek-tribun' },
+        { id: 'T2', name: 'Ek Tribün T2', lateral: 0, seats: 14, category: 'ek-tribun' },
+        { id: 'T3', name: 'Ek Tribün T3', lateral: 9.6, seats: 14, category: 'ek-tribun' },
+      ],
+    },
+    {
+      // Karşı uç: iki pota arkasında da seyirci olsun diye simetrik ek tribün
+      id: 'telescopic-end',
+      kind: 'rake',
+      configs: ['basketball'],
+      group: 'Ek Tribün (Basketbol)',
+      origin: [0, 17.6],
+      facing: [0, -1],
+      rows: 5,
+      rowPitch: 0.85,
+      rise: 0.3,
+      baseY: 0.3,
+      span: [-14.4, 14.4],
+      blocks: [
+        { id: 'T4', name: 'Ek Tribün T4', lateral: -9.6, seats: 14, category: 'ek-tribun' },
+        { id: 'T5', name: 'Ek Tribün T5', lateral: 0, seats: 14, category: 'ek-tribun' },
+        { id: 'T6', name: 'Ek Tribün T6', lateral: 9.6, seats: 14, category: 'ek-tribun' },
       ],
     },
     {
@@ -441,16 +460,16 @@ export default {
       group: 'Ek Tribün (Basketbol)',
       origin: [-12.0, 0],
       facing: [1, 0],
-      rows: 4,
+      rows: 2,
       rowPitch: 0.85,
       rise: 0.15,
       baseY: 0.15,
       span: [-13.6, 13.6],
       blocks: [
-        { id: 'S1', name: 'Yan Ek Tribün S1', lateral: -10.2, seats: 12, category: 'ek-tribun' },
-        { id: 'S2', name: 'Yan Ek Tribün S2', lateral: -3.4, seats: 12, category: 'ek-tribun' },
-        { id: 'S3', name: 'Yan Ek Tribün S3', lateral: 3.4, seats: 12, category: 'ek-tribun' },
-        { id: 'S4', name: 'Yan Ek Tribün S4', lateral: 10.2, seats: 12, category: 'ek-tribun' },
+        { id: 'S1', name: 'Yan Ek Tribün S1', lateral: -10.2, seats: 9, category: 'ek-tribun' },
+        { id: 'S2', name: 'Yan Ek Tribün S2', lateral: -3.4, seats: 9, category: 'ek-tribun' },
+        { id: 'S3', name: 'Yan Ek Tribün S3', lateral: 3.4, seats: 9, category: 'ek-tribun' },
+        { id: 'S4', name: 'Yan Ek Tribün S4', lateral: 10.2, seats: 9, category: 'ek-tribun' },
       ],
     },
     {
@@ -460,16 +479,16 @@ export default {
       group: 'Ek Tribün (Basketbol)',
       origin: [12.0, 0],
       facing: [-1, 0],
-      rows: 4,
+      rows: 2,
       rowPitch: 0.85,
       rise: 0.15,
       baseY: 0.15,
       span: [-13.6, 13.6],
       blocks: [
-        { id: 'S5', name: 'Yan Ek Tribün S5', lateral: -10.2, seats: 12, category: 'ek-tribun' },
-        { id: 'S6', name: 'Yan Ek Tribün S6', lateral: -3.4, seats: 12, category: 'ek-tribun' },
-        { id: 'S7', name: 'Yan Ek Tribün S7', lateral: 3.4, seats: 12, category: 'ek-tribun' },
-        { id: 'S8', name: 'Yan Ek Tribün S8', lateral: 10.2, seats: 12, category: 'ek-tribun' },
+        { id: 'S5', name: 'Yan Ek Tribün S5', lateral: -10.2, seats: 9, category: 'ek-tribun' },
+        { id: 'S6', name: 'Yan Ek Tribün S6', lateral: -3.4, seats: 9, category: 'ek-tribun' },
+        { id: 'S7', name: 'Yan Ek Tribün S7', lateral: 3.4, seats: 9, category: 'ek-tribun' },
+        { id: 'S8', name: 'Yan Ek Tribün S8', lateral: 10.2, seats: 9, category: 'ek-tribun' },
       ],
     },
     {

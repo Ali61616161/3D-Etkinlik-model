@@ -220,21 +220,20 @@ export function createUI({ config, model, handlers }) {
         );
         const hh = document.createElement('div');
         hh.className = 'heights';
-        const hl = document.createElement('span');
-        hl.textContent = 'Boyun';
-        hh.append(hl);
-        for (const v of [1.55, 1.7, 1.85]) {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.dataset.h = String(v);
-          b.setAttribute('aria-pressed', String(v === 1.7));
-          b.textContent = `${String(v).replace('.', ',')} m`;
-          b.addEventListener('click', () => {
-            hh.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-            handlers.onStandHeight(v);
-          });
-          hh.append(b);
-        }
+        hh.innerHTML = `<label for="heightRange">Boyun</label>
+          <input id="heightRange" type="range" min="140" max="210" step="1" value="170" aria-label="Boy (cm)" />
+          <span class="hnum"><input id="heightNum" type="number" min="140" max="210" step="1" value="170" inputmode="numeric" aria-label="Boy (cm)" /> cm</span>`;
+        const rng = hh.querySelector('#heightRange'), num = hh.querySelector('#heightNum');
+        const apply = (v, fromNum) => {
+          let n = Math.round(Number(v));
+          if (!Number.isFinite(n)) return;
+          n = Math.min(210, Math.max(140, n));
+          rng.value = String(n);
+          if (!fromNum || Number(num.value) === n) num.value = String(n);
+          handlers.onStandHeight(n / 100);
+        };
+        rng.addEventListener('input', () => apply(rng.value, false));
+        num.addEventListener('change', () => { apply(num.value, false); });
         wrap.append(h, note, grid, hh);
         el.quick.append(wrap);
       }

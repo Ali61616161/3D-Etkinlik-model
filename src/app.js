@@ -272,7 +272,7 @@ export async function startApp() {
   /** Etkinliğe özel bilgi notu (loca satış politikası vb.). */
   function blockNote(block) {
     if (block.locaNo) return cfgOf().locaNote ?? '';
-    if (block.style === 'standing') return 'Ayakta alan: koltuk numarası yok; seçilen nokta bir bakış noktasıdır (göz ≈ 1,68 m).';
+    if (block.style === 'standing') return 'Ayakta alan: koltuk numarası yok; Boyunu aşağıdan ayarlayabilirsin.';
     return '';
   }
 
@@ -343,7 +343,7 @@ export async function startApp() {
     const lateral = Math.abs(seat.pos[0]) < 4 ? 'orta' : seat.pos[0] < 0 ? 'sol' : 'sağ';
     return {
       title: standing ? `${seat.category === 'ayakta-gc' ? 'Golden Circle' : 'Ayakta'} · ${cfgOf().focusLabel} ${Math.round(distance)} m` : undefined,
-      sub: standing ? `${lateral[0].toUpperCase()}${lateral.slice(1)} bölge · boy ${standH.toFixed(2).replace('.', ',')} m` : undefined,
+      sub: standing ? `${lateral[0].toUpperCase()}${lateral.slice(1)} bölge · boy ${Math.round(standH * 100)} cm` : undefined,
       focusLabel: cfgOf().focusLabel,
       distance,
       height: seat.pos[1],
