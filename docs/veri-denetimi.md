@@ -12,16 +12,19 @@ Durum: **K** = kaynakta doğrudan var · **T** = kaynaklardan hesapla türetildi
 | Çatı alt başlığı ≈ +73,0 | | T | B-B kesiti, piksel ölçeğiyle (±0,5 m) |
 | Yan tribün 13 sıra (3 geri çekilebilir + 10 sabit), karşı uç 14 sıra (3 + 11) | | K | Arkitera konser kat planı yakın görüntüsünde sıralar sayıldı (açık renkli ön sıralar = geri çekilebilir) |
 | Sıra başı 14 koltuk (yan bloklar) | | K | Biletix planı (ön sıra 1–14) + Arkitera planı (sütun başına ≈ 14 koltuk kutusu) |
-| **Tam oturmalı konser toplamı 5.240** | modelde ≈ 5.270 | T | zemin 2.160 + sabit 1.392 + premium 822 + geri çekilebilir 562 + loca 304 (Arkiv). Yan 10 blok × 13 × 14 = 1.820 ≈ 1.392 + 420; uç + yelpaze ≈ 960 ≈ 822 + 142 |
+| **Tam oturmalı konser toplamı 5.240** | **modelde 5.240** | K | zemin 2.160 + sabit 1.392 + premium 822 + geri çekilebilir 562 + loca 304 (Arkiv). Yan 10 blok × 13 × 14 = 1.820 ≈ 1.392 + 420; uç + yelpaze ≈ 960 ≈ 822 + 142 |
 | Zemin oturmalı 2.160 (6 × 18 × 20) | | K/T | Arkiv 2.160 + Biletix blok sayıları |
 | Loca sayısı 24, konumları | | K | Biletix planı + Arkitera +68,50 planı |
 | Loca kapasitesi 12 / 16 kişi, toplam 304 | | K/T | vwarena.com "12 ya da 16 kişilik" + Arkiv 304 → 20×12 + 4×16 |
-| Hangi 4 locanın 16 kişilik olduğu | 11–14 | ~ | bilinmiyor |
+| 16 kişilik localar | 9, 10, 15, 16 | K | Arkitera +68,50 loca kat planında koltuklar tek tek sayıldı: köşe locaları ve uç sıranın iki dış locası 2 × (4 + 4); diğer 20 loca 2 × (3 + 3), her sıra ortadan merdivenle bölünür |
 | Kapasiteler: 4.500 oturmalı, 5.800 / 6.500 ayakta | | K | kaynaklar çelişkili (bkz. dogrulama.md) |
-| Basketbol 5.240 | | K? | Vikipedi. Aynı sayı tam oturmalı konserin toplamıyla (zemin 2.160 dahil) çakışıyor; sahanın olduğu düzende zemin koltuğu olamayacağı için basketbol rakamı bu haliyle **doğrulanamadı**; modelde ≈ 3.760 |
-| Ek tribün 562 | modelde 564 | T | Arkiv; yerleşim (iki uç + iki yan) tahmin |
+| **Basketbol 5.240** | **modelde 5.240** | K | Vikipedi; 2018 EuroCup finali 2. maç (13.04.2018) seyirci sayısı 5.240. Döküm: tribün + loca 3.080 (konserle aynı) + zemin 2.160 (Arkiv kalemi) = 88 saha içi VIP (2 sıra; Darüşşafaka 'Saha İçi 1./2. Sıra') + 2.072 zemin tribünü |
+| Basketbol zemin blok numaraları 1xx | 101–115 | K/T | 103, 104, 109 Darüşşafaka kombine duyurusunda (Mobilet) geçiyor; blokların saha çevresindeki sırası zemin ölçüsünden türetildi |
+| Basketbolda saha zeminin ortasında | | T | Zemin 30 × 50 m (Arkitera planı); sahne kalkınca saha ortalanır, iki pota arkasında da tribün (Pozitif/Eurohoops fotoğrafı) |
 | Zemin ayakta kapasite | 3.300 | K | Arkiv; modelde kalabalık ≈ 3 kişi/m² ile bu sayıya yaklaşır |
-| Sahne 16 × 10 × 1,5 m (160 m²) | | K | vwarena.com (160 m², 1,5 m); en/boy ayrımı tahmin |
+| Sahne 18 × 8,9 × 1,5 m (160 m²) | | K/T | vwarena.com: 160 m², 1,5 m; Arkitera planı sahne eni 18 m ("1800") → derinlik 8,9 m. Planda sahne bölgesi 27 × 12 m |
+| Yan tribün merdiven boşluğu (202/216'da 12 koltuk) | | T | Arkitera planında yan tribün sıralarını kesen merdivenler; resmî toplamı tutturan tek düzeltme |
+| 207/211 yelpaze: ön sıra 4, arka sıra 18 koltuk | | K | Biletix planı |
 | FIBA saha 28 × 15 | | K | FIBA standardı |
 | Pota sehpası, küp, 2 köşe skorbord, şut saati | | K | Colosseo EAS teslimat listesi + fotoğraflar |
 | Buz pisti 22 × 44 m | | ~ | yalnızca "buz pisti olabilir" bilgisi var |
@@ -35,5 +38,5 @@ Durum: **K** = kaynakta doğrudan var · **T** = kaynaklardan hesapla türetildi
 ## Bilinen eksikler
 1. **Promoters Pack** (sahne, rigging, tavan, yükleme) parola korumalı; elimizde yok.
 2. Etkinlik başına **resmî oturma planı** yalnızca oturmalı konser için (Biletix).
-3. Basketbol toplamı resmî 5.240'ın altında (bkz. yukarı): bu rakamın hangi düzene ait olduğu doğrulanamadı.
+3. Basketbolda 1xx bloklarının tam sırası (103, 104, 109 dışındakiler) ve her bloğun koltuk sayısı resmî planla doğrulanmalı.
 4. Yüz yüze keşif yok: pozitif ile birlikte bir gün salonda ölçü/fotoğraf kontrolü yapılması en iyisi.

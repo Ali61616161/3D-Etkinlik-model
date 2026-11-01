@@ -95,8 +95,10 @@ export function buildDetails(ctx) {
   }
 
   // Basketbol: asma hoparlör kümeleri (küpün dört köşesi)
-  for (const [x, z] of [[-6.5, -6.5], [6.5, -6.5], [-6.5, 6.5], [6.5, 6.5]]) {
-    const ry = Math.atan2(-x, -z);
+  const cz0 = config.configurations.basketball?.court?.centerZ ?? 0;
+  for (const [x, z0] of [[-6.5, -6.5], [6.5, -6.5], [-6.5, 6.5], [6.5, 6.5]]) {
+    const z = z0 + cz0;
+    const ry = Math.atan2(-x, -z0);
     for (let k = 0; k < 3; k++) game.box('black', 0.9, 0.55, 0.75, x, 13.9 - k * 0.58, z, ry, 0.32);
     game.box('black', 0.8, 0.6, 0.8, x, 12.0, z, ry);
     for (const [dx, dz] of [[-0.35, -0.3], [0.35, -0.3], [-0.35, 0.3], [0.35, 0.3]]) {

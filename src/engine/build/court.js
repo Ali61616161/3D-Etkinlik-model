@@ -22,7 +22,10 @@ function canvasTex(w, h, draw) {
 export function buildCourt(ctx) {
   const { config, mats, anim, state } = ctx;
   const court = config.configurations.basketball.court;
-  const root = ctx.groupFor(['basketball']);
+  // Saha düzeni zeminin ortasına göre kurulur; tüm parçalar centerZ kadar kaydırılmış bir alt grupta
+  const root = new THREE.Group();
+  root.position.z = 0;
+  ctx.groupFor(['basketball']).add(root);
   const hl = court.length / 2;
   const b = new Batch();
 
@@ -36,7 +39,7 @@ export function buildCourt(ctx) {
     clearcoatRoughness: 0.2,
   });
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(17, 30).rotateX(-Math.PI / 2), courtMat);
-  plane.position.set(0, 0.012, court.centerZ);
+  plane.position.set(0, 0.012, 0);
   plane.receiveShadow = true;
   root.add(plane);
 
@@ -226,19 +229,19 @@ export function buildCourt(ctx) {
   const cubeMats = [faceMat(faces[0]), faceMat(faces[1]), mats.black, mats.black, faceMat(faces[2]), faceMat(faces[3])];
   const cubeY = 11.6;
   const cube = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.5, 4.4), cubeMats);
-  cube.position.set(0, cubeY, court.centerZ);
+  cube.position.set(0, cubeY, 0);
   root.add(cube);
-  b.box('black', 4.6, 0.2, 4.6, 0, cubeY + 1.35, court.centerZ);
-  b.box('black', 4.55, 0.1, 4.55, 0, cubeY - 1.3, court.centerZ);
+  b.box('black', 4.6, 0.2, 4.6, 0, cubeY + 1.35, 0);
+  b.box('black', 4.55, 0.1, 4.55, 0, cubeY - 1.3, 0);
   const discMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2.35, 2.2), toneMapped: false });
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.85, 1.85, 0.08, 48), discMat);
-  disc.position.set(0, cubeY - 1.42, court.centerZ);
+  disc.position.set(0, cubeY - 1.42, 0);
   root.add(disc);
   const ringMesh = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 1.95, 0.22, 48, 1, true), mats.black);
-  ringMesh.position.set(0, cubeY - 1.38, court.centerZ);
+  ringMesh.position.set(0, cubeY - 1.38, 0);
   root.add(ringMesh);
   for (const [x, z] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) {
-    b.bar('steel', [x, cubeY + 1.4, z + court.centerZ], [x * 1.7, 15.6, z * 1.7 + court.centerZ], 0.04);
+    b.bar('steel', [x, cubeY + 1.4, z + 0], [x * 1.7, 15.6, z * 1.7 + 0], 0.04);
   }
 
   // ── Köşe skorbordları ─────────────────────────────────────────────────────────
@@ -263,7 +266,7 @@ export function buildCourt(ctx) {
   const sbMat = new THREE.MeshBasicMaterial({ map: sb.tex, toneMapped: false, color: new THREE.Color(1.3, 1.3, 1.3) });
   for (const s of [-1, 1]) {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.7), sbMat);
-    m.position.set(s * 17.5, 8.4, config.hall.ring.stageWallZ + 0.8);
+    m.position.set(s * 17.5, 8.4, config.hall.ring.stageWallZ + 0.8 - court.centerZ);
     m.rotation.y = -s * 0.5;
     root.add(m);
     b.box('black', 3.5, 1.8, 0.14, m.position.x + s * 0.01, m.position.y, m.position.z - 0.09, -s * 0.5);
