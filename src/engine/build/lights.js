@@ -49,7 +49,7 @@ export function buildLights(ctx) {
 
   let cycleWash = true;
   const presets = {
-    game: { hemi: 0.9, sun: 1.0, game: 1500, wash: 0, bg: 0x0a0b0e, fog: [0x0c0d11, 0.0032] },
+    game: { hemi: 0.8, sun: 0.9, game: 900, wash: 0, bg: 0x0a0b0e, fog: [0x0c0d11, 0.0032] },
     concert: { hemi: 0.42, sun: 0.22, game: 0, wash: 480, bg: 0x050608, fog: [0x0d0818, 0.0105], cycle: true },
     // Senfoni: sıcak, yumuşak; gala: koyu salon + macenta/mavi yıkama; e-spor: kırmızı/camgöbeği takım renkleri
     classical: { hemi: 0.62, sun: 0.32, game: 0, wash: 300, bg: 0x09070a, fog: [0x110e0c, 0.0072], colors: [0xfff0e0, 0xffe8d0, 0xfff4ea] },

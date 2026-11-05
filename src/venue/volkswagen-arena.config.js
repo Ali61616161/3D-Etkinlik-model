@@ -43,6 +43,7 @@ export default {
     operator: 'Pozitif',
     location: 'UNIQ İstanbul, Maslak / Sarıyer',
     sources: [
+      { label: 'Kapsam', use: 'Oturmalı/ayakta konser, senfoni-film konseri ve basketbol resmî plan ve kapasite verisine dayanır. "(örnek)" yazan düzenler (gala, e-spor, buz, konferans) bu salonda yapılmış etkinliklerden ilham alan örnek kurulumlardır; güncel plan yayımlanmamıştır.' },
       { label: 'Biletix oturma planı (kullanıcı sağladı)', use: 'blok adları, koltuk aralıkları, loca 1–24 sırası' },
       { label: 'Vikipedi (TR/EN)', use: 'kapasite 4.500–5.800, basketbol 5.240, 24 loca süiti, 88 VIP' },
       { label: 'Arkiv / Yazgan Design / Archello', use: 'zemin oturmalı 2.160, ek tribün 562, 286 t çelik çatı, malzeme ve renk paleti' },
@@ -151,7 +152,7 @@ export default {
       note: 'Toplam 5.240 (resmî; EuroCup finali 13.04.2018 seyirci sayısı 5.240): sabit + premium + geri çekilebilir tribün ve 24 loca (3.080) + zemin 2.160 (saha çevresinde 1xx blokları ve 2 sıra saha içi VIP, 88).',
     },
     gala: {
-      label: 'Gala · ödül · moda',
+      label: 'Gala · ödül · moda (örnek)',
       short: 'Gala',
       kind: 'gala',
       lighting: 'gala',
@@ -166,7 +167,7 @@ export default {
       note: '24 yuvarlak masa (10 sandalye), merkez podyum (runway), dev LED perde; tribün ve localar açık.',
     },
     esports: {
-      label: 'E-spor',
+      label: 'E-spor (örnek)',
       short: 'E-spor',
       kind: 'esports',
       lighting: 'esports',
@@ -180,7 +181,7 @@ export default {
       note: 'Takım masaları sahnede, dev LED duvar ve asma ekranlar; zemin oturmalı (ör. VALORANT Champions).',
     },
     ice: {
-      label: 'Buz gösterisi',
+      label: 'Buz gösterisi (örnek)',
       short: 'Buz',
       kind: 'ice',
       lighting: 'ice',
@@ -195,7 +196,7 @@ export default {
       locaNote: 'Aile gösterilerinde localar genelde grup/kurumsal satılır (12/16 kişilik); satış etkinliğe göre değişir.',
     },
     conference: {
-      label: 'Konferans · kurumsal',
+      label: 'Konferans (örnek)',
       short: 'Konferans',
       kind: 'conference',
       lighting: 'conference',
