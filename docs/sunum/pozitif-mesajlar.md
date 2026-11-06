@@ -1,6 +1,6 @@
 # Pozitif'e gönderilecek mesajlar
 
-Boşlukları doldur: [SOYADI], [ŞİRKET ADI], [TELEFON], [LİNK] (Pages açılınca `https://ali61616161.github.io/3D-Etkinlik-model/`), [VİDEO].
+Doldurulacak yerler: [LİNK] (Pages açılınca `https://ali61616161.github.io/3D-Etkinlik-model/`) ve [VİDEO]. [ŞİRKET ADI] için Akturan Group kullanılabilir; farklıysa değiştir.
 
 ## E-posta
 
@@ -9,7 +9,7 @@ Boşlukları doldur: [SOYADI], [ŞİRKET ADI], [TELEFON], [LİNK] (Pages açıl�
 
 Merhaba,
 
-Ben Ali [SOYADI], [ŞİRKET ADI]. Volkswagen Arena için, bilet alacak kişinin seçtiği koltuktan sahneyi ya da sahayı 3 boyutlu görebildiği bir araç hazırladım: "Koltuğundan Gör".
+Ben Dursun Ali Akturan, Akturan Group. Volkswagen Arena için, bilet alacak kişinin seçtiği koltuktan sahneyi ya da sahayı 3 boyutlu görebildiği bir araç hazırladım: "Koltuğundan Gör".
 
 Demo: [LİNK] (telefonda ve bilgisayarda, kurulum gerekmez)
 Kısa video: [VİDEO]
@@ -32,8 +32,8 @@ Dürüst bir not: modelin oturmalı konser ve basketbol bölümü resmî kapasit
 15 dakikalık bir görüşmede canlı gösterebilirim.
 
 Saygılarımla,
-Ali [SOYADI]
-[ŞİRKET ADI] · info@akturangroup.com · [TELEFON]
+Dursun Ali Akturan
+Akturan Group · info@akturangroup.com · +90 561 614 72 82
 
 ## LinkedIn mesajı (kısa, 300 karakter civarı)
 
@@ -45,4 +45,4 @@ Merhaba, geçen hafta gönderdiğim koltuktan görüş demosunu hatırlatmak ist
 
 ## Telefon açılışı (30 sn)
 
-"İyi günler, ben Ali [SOYADI]. Arena için bilet alanların koltuğundan sahneyi görebildiği bir demo hazırladım. Pazarlama ya da bilet tarafında kime e-posta atmalıyım?"
+"İyi günler, ben Dursun Ali Akturan. Arena için bilet alanların koltuğundan sahneyi görebildiği bir demo hazırladım. Pazarlama ya da bilet tarafında kime e-posta atmalıyım?"
