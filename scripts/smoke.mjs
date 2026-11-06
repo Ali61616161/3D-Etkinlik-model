@@ -119,7 +119,7 @@ await page.keyboard.press('Escape');
 
 // ayakta bölge seçimi
 await page.evaluate(() => window.__arena.applyConfig('standing', { fly: false }));
-await page.evaluate(() => document.querySelector('#quick button[data-stand="0,0"]').click());
+await page.evaluate(() => document.querySelector('#quick button.primary').click());
 await land();
 if ((await page.evaluate(() => window.__arena.state.seat?.style)) !== 'standing') problems.push('ayakta bölge seçimi çalışmadı');
 

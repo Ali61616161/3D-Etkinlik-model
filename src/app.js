@@ -110,8 +110,8 @@ export async function startApp() {
         { key: 'low', label: 'Düşük', sub: 'eski cihaz, akıcı' },
       ],
       onQualityPick: (k) => setQualityPref(k),
-      onStandZone: (ix, iz) => standZone(ix, iz),
-      onStandHeight: (h) => { standH = h; if (state.view === 'seat' && state.seat?.style === 'standing') viewStanding(state.seat); },
+      onStandEnter: () => standEnter(),
+      onStandHeight: (h) => setStandHeight(h),
       onMapShown: () => minimap.resize(),
       onStep: (ds, dr) => step(ds, dr),
       onResetLook: () => resetLook(),
@@ -326,16 +326,27 @@ export async function startApp() {
     seat.eye[1] = seat.pos[1] + standH * EYE_RATIO; // göz yüksekliği ≈ boy × 0,936 (170 cm → ≈ 11 cm fark)
     selectSeat(seat);
   }
-  /** ix: −1 sol / 0 orta / 1 sağ · iz: 0 ön / 1 orta / 2 arka */
-  function standZone(ix, iz) {
+  /** Boy değişince kamera uçmaz ve panel yeniden çizilmez: yalnızca göz yüksekliği anında güncellenir. */
+  function setStandHeight(h) {
+    standH = h;
+    const seat = state.seat;
+    if (state.view !== 'seat' || !seat || seat.style !== 'standing') return;
+    seat.eye[1] = seat.pos[1] + standH * EYE_RATIO;
+    if (rig.mode === 'seat') camera.position.y = seat.eye[1];
+    else if (rig.fly) rig.fly.to.y = seat.eye[1];
+    const st = statsFor(seat);
+    ui.setHud(seat, blockOf(seat), true, cfgOf().focusDative, st);
+    ui.showSeat(seat, st, blockOf(seat), standingTip());
+  }
+  /** Ayakta alanda ortada bir noktaya gir (bölümlendirme yok; istediği yere salonda dokunarak gider). */
+  function standEnter() {
     const pts = standPoints();
     if (!pts.length) return;
     const zs = pts.map((p) => p.pos[2]);
-    const zMin = Math.min(...zs), zMax = Math.max(...zs);
-    const xs = pts.map((p) => Math.abs(p.pos[0]));
-    const xMax = Math.max(...xs);
-    viewStanding(nearestStanding(ix * xMax * 0.6, zMin + ((zMax - zMin) * (iz + 0.5)) / 3));
+    viewStanding(nearestStanding(0, (Math.min(...zs) + Math.max(...zs)) / 2));
   }
+  /** (eski) bölge seçimi kaldırıldı */
+
   const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const _hit = new THREE.Vector3();
 
@@ -348,8 +359,8 @@ export async function startApp() {
     const standing = seat.style === 'standing';
     const lateral = Math.abs(seat.pos[0]) < 4 ? 'orta' : seat.pos[0] < 0 ? 'sol' : 'sağ';
     return {
-      title: standing ? `${seat.category === 'ayakta-gc' ? 'Golden Circle' : 'Ayakta'} · ${cfgOf().focusLabel} ${Math.round(distance)} m` : undefined,
-      sub: standing ? `${lateral[0].toUpperCase()}${lateral.slice(1)} bölge · boy ${Math.round(standH * 100)} cm` : undefined,
+      title: standing ? `Ayakta · ${cfgOf().focusLabel} ${Math.round(distance)} m` : undefined,
+      sub: standing ? `boy ${Math.round(standH * 100)} cm · göz ${Math.round(standH * EYE_RATIO * 100)} cm` : undefined,
       focusLabel: cfgOf().focusLabel,
       distance,
       height: seat.pos[1],
