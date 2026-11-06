@@ -54,56 +54,36 @@ function limb(r0, r1, len, seg) {
   return g;
 }
 
-/** pose: 'stand' | 'cheer' (kollar havada) | 'sit'; detail: 'near' | 'far' */
-export function buildHuman(pose, detail) {
-  const near = detail === 'near';
-  const seg = near ? 8 : 5;
+/**
+ * Sade figür (her kalite seviyesinde aynı, ≈ 60 üçgen): bacak, gövde, baş (küre), kollar; saç ve kıyafet renkli.
+ * pose: 'stand' | 'cheer' (kollar havada) | 'sit'. Yerel +z = baktığı yön.
+ */
+export function buildHuman(pose) {
   const P = [];
-  const sph = (r, ws, hs) => new THREE.SphereGeometry(r, ws, hs);
   const sitting = pose === 'sit';
-  // gövde: oturan figürde kalça 0,47 m'de
-  const hipY = sitting ? 0.47 : 0.95;
-  const torsoY = hipY + 0.27;
-  const shoulderY = hipY + 0.52;
-  const headY = hipY + (sitting ? 0.73 : 0.68);
-
-  // gövde (hafif oval kesit) + omuz
-  P.push(part(new THREE.CylinderGeometry(0.19, 0.155, 0.52, seg), 'cloth', 1.0, M4(0, torsoY, 0, 0, 0, 0, 1, 1, 0.68)));
-  P.push(part(new THREE.CylinderGeometry(0.17, 0.18, 0.2, seg), 'cloth', 0.8, M4(0, hipY, 0, 0, 0, 0, 1, 1, 0.72)));
-  if (near) P.push(part(new THREE.BoxGeometry(0.46, 0.1, 0.2), 'cloth', 1.0, M4(0, shoulderY - 0.03, 0)));
-  // boyun + baş (elips) + saç
-  P.push(part(limb(0.05, 0.055, 0.1, near ? 6 : 4), 'skin', 1.0, M4(0, shoulderY + 0.05, 0.005)));
-  P.push(part(sph(0.105, near ? 9 : 5, near ? 7 : 4), 'skin', 1.0, M4(0, headY, 0.01, 0, 0, 0, 0.92, 1.18, 1)));
-  P.push(part(new THREE.SphereGeometry(0.112, near ? 9 : 5, near ? 5 : 3, 0, Math.PI * 2, 0, near ? 1.75 : 1.6), 'hair', 0.9, M4(0, headY + 0.02, -0.012, -0.12, 0, 0, 0.95, 1.12, 1.02)));
-  // bacaklar + ayakkabı
-  const legLen = sitting ? 0.5 : 0.84;
+  const hipY = sitting ? 0.47 : 0.92;
+  const shoulderY = hipY + 0.5;
+  const headY = hipY + (sitting ? 0.74 : 0.7);
+  // bacaklar
   if (sitting) {
-    for (const sx of [-0.095, 0.095]) {
-      P.push(part(limb(0.085, 0.065, 0.46, seg), 'cloth', 0.75, M4(sx, hipY + 0.02, 0.24, Math.PI / 2, 0, 0))); // uyluk
-      P.push(part(limb(0.06, 0.05, 0.46, seg), 'cloth', 0.7, M4(sx, 0.25, 0.46))); // baldır
-      if (near) P.push(part(new THREE.BoxGeometry(0.1, 0.07, 0.25), 'cloth', 0.25, M4(sx, 0.03, 0.55)));
+    for (const sx of [-0.1, 0.1]) {
+      P.push(part(new THREE.BoxGeometry(0.15, 0.14, 0.45), 'cloth', 0.75, M4(sx, hipY, 0.22)));
+      P.push(part(new THREE.BoxGeometry(0.13, 0.46, 0.13), 'cloth', 0.7, M4(sx, 0.23, 0.44)));
     }
   } else {
-    for (const sx of [-0.095, 0.095]) {
-      P.push(part(limb(0.085, 0.055, legLen, seg), 'cloth', 0.75, M4(sx, 0.07 + legLen / 2, 0)));
-      if (near) P.push(part(new THREE.BoxGeometry(0.1, 0.07, 0.26), 'cloth', 0.25, M4(sx, 0.035, 0.05)));
-    }
+    for (const sx of [-0.1, 0.1]) P.push(part(new THREE.BoxGeometry(0.16, 0.9, 0.16), 'cloth', 0.72, M4(sx, 0.45, 0)));
   }
-  // kollar: üst kol (kıyafet) + ön kol (ten) + el
-  const armOut = pose === 'cheer' ? 2.7 : 0.1;
+  // gövde
+  P.push(part(new THREE.BoxGeometry(0.46, 0.56, 0.24), 'cloth', 1.0, M4(0, hipY + 0.28, 0)));
+  // baş (küre) + saç (üst yarım küre)
+  P.push(part(new THREE.SphereGeometry(0.115, 8, 6), 'skin', 1.0, M4(0, headY, 0.01, 0, 0, 0, 0.95, 1.15, 1)));
+  P.push(part(new THREE.SphereGeometry(0.12, 8, 4, 0, Math.PI * 2, 0, 1.45), 'hair', 0.9, M4(0, headY + 0.03, -0.015, -0.15, 0, 0, 0.98, 1.1, 1.03)));
+  // kollar
   for (const s of [-1, 1]) {
-    const sh = new THREE.Vector3(s * 0.255, shoulderY - 0.04, 0);
-    const dir = new THREE.Vector3(Math.sin(armOut) * s, -Math.cos(armOut), 0); // omuzdan dışa/aşağı
-    const place = (len, t0, r0, r1, mask, shade) => {
-      const mid = sh.clone().addScaledVector(dir, t0 + len / 2);
-      const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir);
-      return part(limb(r0, r1, len, near ? 6 : 4), mask, shade, new THREE.Matrix4().compose(mid, q, new THREE.Vector3(1, 1, 1)));
-    };
-    P.push(place(0.3, 0, 0.05, 0.042, 'cloth', 1.0));
-    P.push(place(near ? 0.27 : 0.3, 0.3, 0.038, 0.032, 'skin', 1.0));
-    if (near) {
-      const hand = sh.clone().addScaledVector(dir, 0.6);
-      P.push(part(sph(0.04, 5, 4), 'skin', 1.0, new THREE.Matrix4().makeTranslation(hand.x, hand.y, hand.z)));
+    if (pose === 'cheer') {
+      P.push(part(new THREE.BoxGeometry(0.1, 0.62, 0.1), 'cloth', 1.0, M4(s * 0.3, shoulderY + 0.28, 0, 0, 0, -s * 0.18)));
+    } else {
+      P.push(part(new THREE.BoxGeometry(0.1, 0.5, 0.1), 'cloth', 1.0, M4(s * 0.29, shoulderY - 0.2, sitting ? 0.06 : 0)));
     }
   }
   const g = mergeGeometries(P, false);
@@ -136,10 +116,11 @@ export class Crowd {
     this.sets = new Map();
     this.current = null;
     this.mat = humanMaterial();
-    this.nearR = this.low ? 0 : 15;
+    this.nearR = 0; // tek detay seviyesi
     this.geos = {};
     for (const pose of ['stand', 'cheer', 'sit']) {
-      this.geos[pose] = { near: buildHuman(pose, 'near'), far: buildHuman(pose, 'far') };
+      const g = buildHuman(pose);
+      this.geos[pose] = { near: g, far: g };
     }
     this.camPos = new THREE.Vector3(1e9, 0, 0);
     this.dirty = true;
@@ -165,7 +146,7 @@ export class Crowd {
           x: s.pos[0] + (r() - 0.5) * jitter * 2,
           y: s.pos[1],
           z: s.pos[2] + (r() - 0.5) * jitter * 2,
-          yaw: standing ? (r() - 0.5) * 0.8 : s.yaw,
+          yaw: standing ? Math.PI + (r() - 0.5) * 0.6 : s.yaw, // ayakta: sahneye (−z) dönük
           sy: h / HUMAN_H,
           sx: (male ? 1.04 : 0.93) * (0.94 + r() * 0.12),
           cloth: CLOTH[Math.floor(r() * CLOTH.length)],
