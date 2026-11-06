@@ -389,7 +389,7 @@ export async function startApp() {
       lookDir = new THREE.Vector3(-Math.sin(rig.yaw) * cp, Math.sin(rig.pitch), -Math.cos(rig.yaw) * cp);
     }
     rig.flySeat(seat, cfgOf().focus, { lookDir, duration: keepLook ? 0.75 : undefined });
-    document.getElementById('panel').classList.remove('open');
+    if (matchMedia('(max-width: 860px)').matches) document.getElementById('panel').classList.remove('open');
   }
 
   function exitSeat(fly = true) {

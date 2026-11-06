@@ -88,14 +88,11 @@ button { cursor: pointer; }
 #panelToggle { display: none; }
 @media (min-width: 861px) {
   #panel { transition: transform 0.3s ease; }
-  #panelToggle {
-    position: absolute; left: -44px; top: 4px; width: 36px; height: 36px; align-items: center; justify-content: center;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; backdrop-filter: blur(14px);
-  }
-  #panelToggle span { width: 14px; height: 2px; background: var(--text); box-shadow: 0 -5px var(--text), 0 5px var(--text); }
-  body.seat-mode #panelToggle { display: flex; }
-  body.seat-mode #panel:not(.open) { transform: translateX(calc(100% + var(--gutter) + 8px)); }
+  #panelToggle { display: none; }
+  #panelToggleD { width: 42px; height: 42px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  #panel:not(.open) { transform: translateX(calc(100% + var(--gutter) + 8px)); }
 }
+@media (max-width: 860px) { #panelToggleD { display: none; } }
 .panel-scroll {
   overflow: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 2px;
   scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent;

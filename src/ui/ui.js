@@ -66,6 +66,7 @@ export function createUI({ config, model, handlers }) {
   $('bbGo').addEventListener('click', () => handlers.onView());
   $('bbClose').addEventListener('click', () => handlers.onClearBlock());
   $('panelToggle').addEventListener('click', () => el.panel.classList.toggle('open'));
+  $('panelToggleD').addEventListener('click', () => el.panel.classList.toggle('open'));
   $('hudPrev').addEventListener('click', () => handlers.onStep(-1, 0));
   $('hudNext').addEventListener('click', () => handlers.onStep(1, 0));
   $('hudFront').addEventListener('click', () => handlers.onStep(0, -1));
