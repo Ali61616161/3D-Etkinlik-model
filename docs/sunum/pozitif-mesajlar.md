@@ -20,7 +20,7 @@ Bilet alan kişi koltuğundan ne göreceğini bilmediğinde ya vazgeçiyor ya da
 **Neler yaptık?**
 - Salonu mimari projenize ve Biletix planınıza göre kurduk: 5.240 kapasite, 24 loca (12 ve 16 kişilik), tribünler, zemin.
 - Oturmalı ve ayakta konser, senfoni/film konseri ve basketbol düzenleri.
-- Kullanıcı blok, loca ya da koltuk seçiyor; seçtiği yerin göz hizasından etrafa bakıyor. Ayakta alanda bölge ve boy seçerek görüşü deniyor.
+- Kullanıcı blok, loca ya da koltuk seçiyor; seçtiği yerin göz hizasından etrafa bakıyor. Ayakta alanda boyunu seçerek görüşü deniyor.
 
 **Nasıl entegre olur?**
 Sayfa tek bir bağlantı ya da iframe olarak çalışır. Biletix/Passo sayfanızda "Koltuğundan Gör" düğmesinden açılabilir. Mevcut satış akışınıza dokunmaz, bilet ve ödeme sistemine bağlanmak zorunda değildir.

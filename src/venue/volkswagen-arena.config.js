@@ -120,7 +120,7 @@ export default {
       stage: { width: 18, depth: 8.9, height: 1.5, z0: -28 },
       crowd: true,
       locaNote: 'Zemin ayakta olsa da localar oturmalıdır (12/16 kişilik); loca satışı etkinliğe göre değişir.',
-      note: 'Zemin ayakta (Golden Circle + saha içi), tribünler ve localar oturmalı. Resmî toplam ≈ 6.500 kişi; modeldeki noktalar kapasite değil bakış noktasıdır.',
+      note: 'Zemin ayakta (tek ayakta alan, bölümlendirme yok), tribünler ve localar oturmalı. Resmî toplam ≈ 6.500 kişi; modeldeki noktalar kapasite değil bakış noktasıdır.',
     },
     symphony: {
       label: 'Senfoni · film konseri',
@@ -219,7 +219,6 @@ export default {
     loca: { label: 'Loca', color: '#c084fc' },
     'ek-tribun': { label: 'Zemin Tribünü (basketbol)', color: '#a3e635' },
     vip: { label: 'Saha İçi VIP', color: '#f87171' },
-    'ayakta-gc': { label: 'Golden Circle (ayakta)', color: '#ff5d8f' },
     ayakta: { label: 'Saha İçi Ayakta', color: '#ffb13d' },
     masa: { label: 'Masa (gala)', color: '#facc15' },
   },
@@ -262,32 +261,32 @@ export default {
       ],
     },
     {
-      // Ayakta konser: sahne önü (Golden Circle) ve saha içi ayakta alan. Koltuk yok; yalnızca "ayakta bakış noktası"
+      // Ayakta konser: tek ayakta alan (bölümlendirme verisi yok). Koltuk yok; yalnızca "ayakta bakış noktası"
       // (göz yüksekliği 1,68 m). Resmî: zemin ayakta + tribün oturmalı ≈ 6.500 kişi.
       id: 'standing-front',
       kind: 'flat',
       configs: ['standing'],
-      group: 'Sahne Önü Ayakta',
+      group: 'Ayakta Alan',
       origin: [0, -15.6],
       facing: [0, -1],
       rows: 9,
       rowPitch: 0.9,
       seatPitch: 0.9,
       seatStyle: 'standing',
-      blocks: [{ id: 'GC', name: 'Golden Circle (sahne önü ayakta)', lateral: 0, seats: 31, category: 'ayakta-gc' }],
+      blocks: [{ id: 'GC', name: 'Ayakta alan (sahne önü)', lateral: 0, seats: 31, category: 'ayakta' }],
     },
     {
       id: 'standing-back',
       kind: 'flat',
       configs: ['standing'],
-      group: 'Saha İçi Ayakta',
+      group: 'Ayakta Alan',
       origin: [0, -7.0],
       facing: [0, -1],
       rows: 28,
       rowPitch: 0.9,
       seatPitch: 0.9,
       seatStyle: 'standing',
-      blocks: [{ id: 'AY', name: 'Saha İçi Ayakta', lateral: 0, seats: 31, category: 'ayakta' }],
+      blocks: [{ id: 'AY', name: 'Ayakta alan', lateral: 0, seats: 31, category: 'ayakta' }],
     },
     {
       // Gala / ödül / moda: 24 yuvarlak masa × 10 sandalye (Pozitif "Men of the Year" ve defile fotoğraflarına göre)

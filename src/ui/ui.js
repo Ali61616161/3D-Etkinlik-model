@@ -142,12 +142,6 @@ export function createUI({ config, model, handlers }) {
     <ul><li>Model, resmî plan ve fotoğraflardan üretilmiş tahmini bir yerleşimdir; gerçek bilet planı yerine geçmez.</li>
     <li>Ölçüler <code>src/venue/volkswagen-arena.config.js</code> dosyasından okunur; resmî plan geldiğinde yalnızca bu dosya güncellenir.</li></ul>`;
 
-  const standZones = [
-    ['Sol ön', 'Ön', 'Sağ ön'],
-    ['Sol orta', 'Orta', 'Sağ orta'],
-    ['Sol arka', 'Arka', 'Sağ arka'],
-  ];
-
   return {
     setLoading(msg) { el.loadDetail.textContent = msg ?? ''; },
     hideLoading() { el.loading.classList.add('done'); setTimeout(() => el.loading.remove(), 800); },
@@ -203,22 +197,15 @@ export function createUI({ config, model, handlers }) {
       if (hasStanding) {
         const wrap = document.createElement('div');
         const h = document.createElement('h3');
-        h.textContent = 'Ayakta nerede durmak istersin?';
+        h.textContent = 'Ayakta alan';
         const note = document.createElement('p');
         note.className = 'stand-note';
-        note.textContent = 'Ayakta alanda yer ayrılmaz. Bir bölge seç ya da salonda istediğin yere dokun.';
-        const grid = document.createElement('div');
-        grid.className = 'grid stand';
-        standZones.forEach((row, iz) =>
-          row.forEach((label, ix) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = label;
-            btn.dataset.stand = `${ix - 1},${iz}`;
-            btn.addEventListener('click', () => handlers.onStandZone(ix - 1, iz));
-            grid.append(btn);
-          }),
-        );
+        note.textContent = 'Ayakta alanda yer ayrılmaz. Girip boyunu ayarla; başka bir yerden görmek için salonda zemine dokun.';
+        const enter = document.createElement('button');
+        enter.type = 'button';
+        enter.className = 'primary';
+        enter.textContent = 'Ayakta alana gir';
+        enter.addEventListener('click', () => handlers.onStandEnter());
         const hh = document.createElement('div');
         hh.className = 'heights';
         hh.innerHTML = `<label for="heightRange">Boyun</label>
@@ -235,7 +222,7 @@ export function createUI({ config, model, handlers }) {
         };
         rng.addEventListener('input', () => apply(rng.value, false));
         num.addEventListener('change', () => { apply(num.value, false); });
-        wrap.append(h, note, grid, hh);
+        wrap.append(h, note, enter, hh);
         el.quick.append(wrap);
       }
       for (const [title, cls, pick] of [['Localar', 'loca', (b) => b.locaNo], ['Masalar', 'masa', (b) => b.kind === 'tables']]) {

@@ -155,7 +155,7 @@ test('etkinlik düzenleri: her düzenin sahnesi/sahası/pisti, odağı ve kamera
 test('ayakta konser: koltuk yok, yalnızca bakış noktaları; tribün ve localar oturmalı', () => {
   const list = seatsForConfig(model, 'standing');
   assert.ok(list.some((s) => s.style === 'standing' && s.noMesh));
-  assert.ok(list.every((s) => (s.style === 'standing') === (s.category === 'ayakta' || s.category === 'ayakta-gc')));
+  assert.ok(list.every((s) => (s.style === 'standing') === (s.category === 'ayakta')));
   assert.ok(!list.some((s) => s.category === 'sahne-onu' || s.category === 'saha-ici'), 'zemin blokları ayakta düzende olmamalı');
   const st = list.find((s) => s.noMesh);
   assert.ok(Math.abs(st.eye[1] - 1.68) < 1e-6, 'ayakta göz yüksekliği 1,68 m');

@@ -353,6 +353,6 @@ export function makeCameraBounds(config, groundHeight) {
 /** Blok görünen adı: "Loca 7", "Masa 5", "Golden Circle…", "Blok 202". */
 export function blockLabel(b) {
   if (b.locaNo) return `Loca ${b.locaNo}`;
-  if (b.kind === 'tables' || b.group === 'Sahne Önü Ayakta' || b.group === 'Saha İçi Ayakta' || b.id.startsWith('VIP')) return b.name;
+  if (b.kind === 'tables' || b.group === 'Ayakta Alan' || b.id.startsWith('VIP')) return b.name;
   return `Blok ${b.id}`;
 }
