@@ -11,12 +11,12 @@ Video, linki açmayan kişiler içindir. E-postaya hem link hem video koy: link 
 ## Çekim sırası (toplam 30 sn)
 | Sn | Ne yap |
 |---|---|
-| 0–4 | "Konser · oturmalı" açık. Fareyle salonu yavaşça döndür. |
-| 4–10 | Yan tribündeki bir bloğa tıkla (kamera bloğa bakar), sonra bir koltuğa tıkla: koltuktan sahne görünür. Etrafa sürükleyerek bak. |
-| 10–14 | Esc ile salona dön. Sağdaki panelden Localar → 12'ye bas, "Buradan göster". |
-| 14–19 | Üstten etkinlik seçiciyle **Basketbol**'a geç; genel görünüm. |
-| 19–25 | **Konser · ayakta** → panelden "Ön" bölgeyi seç. Boy kaydırıcısını 160'tan 185'e çek, görüşün değiştiğini göster. |
-| 25–30 | Salona dön, genel görünümde dur. Üstüne yazı ekle: "Koltuğundan Gör · Volkswagen Arena İstanbul". |
+| 0–4 | Üstteki seçicide "Konser · oturmalı" açık. Salonu fareyle yavaşça döndür; sahne ve tribünler görünsün. |
+| 4–10 | Sol yan tribündeki bir bloğa tıkla (kamera bloğa karşıdan bakar), sonra o blokta bir koltuğa tıkla. Koltuktan sahneyi göster, sürükleyerek etrafa bak. |
+| 10–14 | Esc ile salona dön. Sağdaki panelde Localar bölümünden **12**'ye bas, "Buradan göster"e tıkla. Locadan sahne görünsün. |
+| 14–19 | Seçiciden **Basketbol**'u seç. Salona dön; sahayı ve iki pota arkasındaki tribünleri göster. |
+| 19–25 | Seçiciden **Konser · ayakta**'yı seç, panelde **"Ayakta alana gir"** düğmesine bas. **Boyun** kaydırıcısını 160'tan 185'e çek; göz hizası ve görüş değişir. |
+| 25–30 | "Salona dön"e bas, genel görünümde dur. Üstüne yazı ekle: "Koltuğundan Gör · Volkswagen Arena İstanbul". |
 
 ## Kaçın
 - Menüleri açık bırakma. Bilgi penceresini gösterme.
