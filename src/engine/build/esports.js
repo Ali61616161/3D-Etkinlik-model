@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Batch } from '../batch.js';
-import { truss, fohBox } from './stage.js';
+import { truss } from './stage.js';
 
 function animTex(w, h) {
   const c = document.createElement('canvas');
@@ -129,11 +129,6 @@ export function buildEsports(ctx) {
     }
   }
   for (const s of [-1, 1]) truss(b, [s * (st.width / 2 + 1), yS, st.z0 + 1.6], [s * (st.width / 2 + 1), gy, st.z0 + 1.6], 0.5);
-
-  // FOH (aynı enine koridor)
-  const fohB = new Batch();
-  fohBox(fohB, 4.85);
-  root.add(fohB.build(mats, {}));
 
   root.add(b.build(mats, {}));
   root.add(edgeB.build({ edgeR: glow(2.8, 0.3, 0.4), edgeC: glow(0.3, 2.4, 2.8) }, {}));

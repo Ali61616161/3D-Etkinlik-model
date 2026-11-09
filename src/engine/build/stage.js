@@ -38,7 +38,7 @@ export function fohBox(batch, fz, w = 5.8) {
   batch.box('black', 0.6, 0.35, 0.4, 1.0, 1.3, fz - 0.55);
 }
 
-/** Konser düzeni: sahne, LED duvar, truss'lar, hoparlör dizileri, bariyer, FOH, ışık huzmeleri. */
+/** Konser düzeni: sahne, LED duvar, truss'lar, hoparlör dizileri, bariyer, ışık huzmeleri. */
 export function buildStage(ctx) {
   const { config, mats, hooks, anim, state } = ctx;
   // Rock sahnesi: oturmalı ve ayakta konserde ortak
@@ -223,21 +223,7 @@ export function buildStage(ctx) {
   b.box('steel', barHalf * 2, 0.05, 0.05, 0, 0.5, barZ);
   for (let x = -barHalf; x <= barHalf + 0.01; x += 1.2) b.box('steel', 0.05, 1.15, 0.05, x, 0.57, barZ);
 
-  // FOH (ses/ışık masası): oturmalıda ön-arka blok arası enine koridorda; ayakta konserde saha arkasında kule
-  const mkFoh = fohBox;
-  const fohSeated = new Batch();
-  mkFoh(fohSeated, 4.85);
-  ctx.groupFor(['concert']).add(fohSeated.build(mats, {}));
-  // Ayakta konser: saha arkasında FOH + ön/arka bölgeleri ayıran seyirci bariyeri + yan çit
-  const fohStanding = new Batch();
-  mkFoh(fohStanding, 22.4, 8);
-  for (const x of [-4, 4]) fohStanding.bar('steel', [x, 0.9, 21.2], [x, 3.4, 21.2], 0.06);
-  fohStanding.box('black', 8.2, 0.08, 2.5, 0, 3.4, 22.4);
-  const splitZ = -4.2;
-  fohStanding.box('steelLight', 29, 0.05, 0.05, 0, 1.12, splitZ);
-  fohStanding.box('steel', 29, 0.05, 0.05, 0, 0.5, splitZ);
-  for (let x = -14.5; x <= 14.51; x += 1.2) fohStanding.box('steel', 0.05, 1.15, 0.05, x, 0.57, splitZ);
-  ctx.groupFor(['standing']).add(fohStanding.build(mats, {}));
+  // FOH (ses/ışık masası) ve ayakta alanı bölen bariyer bilerek yok: bu salon için kaynaklı bir yerleşim bilgisi bulunmuyor.
 
   root.add(b.build(mats, { uvScale: {} }));
   // lamba renkleri (emissive)
